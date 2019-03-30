@@ -100,20 +100,26 @@ using ll = long long int;
 #define iterate(cnt,b,e) for(auto cnt=(b);(cnt)!=(e);++(cnt))
 #define diterate(cnt,b,e) for(auto cnt=(b);(cnt)!=(e);--(cnt))
 const ll MD = 1000000007ll; const long double PI = 3.1415926535897932384626433832795L;
-inline void assert_call(bool assertion, function<void()> f) { if (!assertion) { cerr << "assertion fault:" << endl; f(); abort(); } }
 template<typename T1, typename T2> inline ostream& operator <<(ostream &o, const pair<T1, T2> p) { o << '(' << p.first << ':' << p.second << ')'; return o; }
 template<typename Vec> inline ostream& _ostream_vecprint(ostream& os, const Vec& a) {
     os << '['; for (const auto& e : a) os << ' ' << e << ' '; os << ']'; return os;
 }
 template<typename T> inline ostream& operator<<(ostream& o, const vector<T>& v) { return _ostream_vecprint(o, v); }
 template<typename T, size_t S> inline ostream& operator<<(ostream& o, const array<T, S>& v) { return _ostream_vecprint(o, v); }
-template<typename T> inline T& chmax(T& to, const T& val) { return to = max(to, val); }
-template<typename T> inline T& chmin(T& to, const T& val) { return to = min(to, val); }
-void bye(string s, int code = 0) { cout << s << endl; exit(code); }
-mt19937_64 randdev((random_device())());
-template<typename T, typename Random = decltype(randdev), typename enable_if<is_integral<T>::value>::type* = nullptr>
-inline T rand(T l, T h, Random& rand = randdev) { return uniform_int_distribution<T>(l, h)(rand); }
-template<typename T, typename Random = decltype(randdev), typename enable_if<is_floating_point<T>::value>::type* = nullptr>
-inline T rand(T l, T h, Random& rand = randdev) { return uniform_real_distribution<T>(l, h)(rand); }
+template<typename T> static constexpr T limit(const T& v, const T& low, const T& high) { return min(max(v, low), high); }
+template<typename T> static constexpr T& chmax(T& to, const T& val) { return to = max(to, val); }
+template<typename T> static constexpr T& chmin(T& to, const T& val) { return to = min(to, val); }
+template<typename T> static constexpr T& chlim(T& to, const T& low, const T& high) { return to = limit(to, low, high); }
+// mt19937_64 randdev((random_device())());
+// template<typename T, typename Random = decltype(randdev), typename enable_if<is_integral<T>::value>::type* = nullptr>
+// inline T rand(T l, T h, Random& rand = randdev) { return uniform_int_distribution<T>(l, h)(rand); }
+// template<typename T, typename Random = decltype(randdev), typename enable_if<is_floating_point<T>::value>::type* = nullptr>
+// inline T rand(T l, T h, Random& rand = randdev) { return uniform_real_distribution<T>(l, h)(rand); }
+// 
 
-
+template<class T>
+constexpr T cpow(T base, T exp) noexcept {
+    return exp <= 0 ? 1 :
+        exp == 1 ? base :
+        base * cpow(base, exp - 1);
+}
