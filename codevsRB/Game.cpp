@@ -8,10 +8,6 @@ namespace Game {
 
     const Command Command::Skill = Command(1 << 6);
 
-    constexpr ChainScoreT ChainScore;
-    constexpr ChainSkillScoreT ChainSkillScore;
-    constexpr BombScoreT BombScore;
-
 
     bool Field::fall() {
         bool ok = true;
@@ -411,9 +407,9 @@ namespace Game {
             me.ojama = 0;
 
         // ƒ^[ƒ“‘‰Á
-        turnCount += 1;
+        turn += 1;
 
-        return mesuccess && ensuccess && turnCount < N;
+        return mesuccess && ensuccess && turn < N;
 
     }
 }

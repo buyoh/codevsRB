@@ -152,6 +152,18 @@ namespace Game {
         // @return overflowed?
         bool stackOjama();
 
+        // fall->eliminateÇåJÇËï‘Ç∑
+        // @return count of chain
+        inline int chain() {
+            int cnt = 0;
+            fall();
+            while (eliminate() > 0) {
+                ++cnt;
+                fall();
+            }
+            return cnt;
+        }
+
 
         inline bool operator==(const Field& f) const {
             return data_ == f.data_;
@@ -181,6 +193,10 @@ namespace Game {
         constexpr bool skill() const noexcept { return (data_ >> 6); }
 
         static const Command Skill;
+
+        inline void swap(Command& cmd) noexcept {
+            std::swap(data_, cmd.data_);
+        }
     };
 
 
@@ -223,8 +239,9 @@ namespace Game {
     };
 
     // Ç»ÇÒÇ‡ÇÌÇ©ÇÁÇÒ
-    // extern constexpr ChainScoreT chainScore;
-    // extern constexpr BombScoreT bombScore;
+    constexpr ChainScoreT ChainScore;
+    constexpr ChainSkillScoreT ChainSkillScore;
+    constexpr BombScoreT BombScore;
 
 
 
@@ -323,13 +340,13 @@ namespace Game {
 
     // É^Å[ÉìÇ≤Ç∆ÇÃì¸óÕ
     struct Input {
-        int turnCount;
+        int turn;
         Player me; // ÇÌÇΩÇ≠Çµ
         Player en; // Ç†Ç¢Çƒ
 
         template<typename istream>
         void input(istream& is) {
-            is >> turnCount;
+            is >> turn;
             if (is.eof()) return;
             me.input(is);
             en.input(is);

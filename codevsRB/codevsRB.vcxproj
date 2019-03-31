@@ -141,6 +141,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="MainAI.h" />
+    <ClInclude Include="Time.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

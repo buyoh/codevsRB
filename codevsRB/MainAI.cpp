@@ -19,7 +19,7 @@ void execAI(istream& fin, ostream& fout) {
 
     while (true) {
         Game::Input i; i.input(fin);
-        auto cmd = ai.loop(i, fi.packs[i.turnCount]);
+        auto cmd = ai.loop(i, fi.packs[i.turn]);
 
         fout << cmd << endl;
     }
@@ -74,11 +74,11 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
     };
 
     auto dumpme = [&]() {
-        cerr << "turn: " << (input.turnCount) << endl;
+        cerr << "turn: " << (input.turn) << endl;
         cerr << "last mycmd (rotated)" << endl;
-        dumpcmd(mycmd, firstInput.packs[localinput.turnCount - 1]);
+        dumpcmd(mycmd, firstInput.packs[localinput.turn - 1]);
         cerr << "last encmd (rotated)" << endl;
-        dumpcmd(encmd, firstInput.packs[localinput.turnCount - 1]);
+        dumpcmd(encmd, firstInput.packs[localinput.turn - 1]);
         cerr << "PREVFIELD(me): " << endl;
         dumpfield(prev.me.field);
         cerr << "ACTUAL(me): " << endl;
@@ -88,11 +88,11 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
     };
 
     auto dumpen = [&]() {
-        cerr << "turn: " << (input.turnCount) << endl;
+        cerr << "turn: " << (input.turn) << endl;
         cerr << "last mycmd (rotated)" << endl;
-        dumpcmd(mycmd, firstInput.packs[localinput.turnCount - 1]);
+        dumpcmd(mycmd, firstInput.packs[localinput.turn - 1]);
         cerr << "last encmd (rotated)" << endl;
-        dumpcmd(encmd, firstInput.packs[localinput.turnCount - 1]);
+        dumpcmd(encmd, firstInput.packs[localinput.turn - 1]);
         cerr << "PREVFIELD(en): " << endl;
         dumpfield(prev.en.field);
         cerr << "ACTUAL(en): " << endl;
@@ -106,13 +106,13 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
         input.input(fin);
 
         if (!first) {
-            if (input.turnCount != localinput.turnCount) {
+            if (input.turn != localinput.turn) {
                 // EXIT
                 break;
             }
             if (!(input.me.field == localinput.me.field)) {
                 dumpme();
-                prev.apply(mycmd, encmd, firstInput.packs[prev.turnCount]);
+                prev.apply(mycmd, encmd, firstInput.packs[prev.turn]);
                 abort();
             }
             if (!(input.en.field == localinput.en.field)) {
@@ -133,7 +133,7 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
 
         localinput = input;
         prev = input;
-        localinput.apply(mycmd, encmd, firstInput.packs[localinput.turnCount]);
+        localinput.apply(mycmd, encmd, firstInput.packs[localinput.turn]);
 
     }
 

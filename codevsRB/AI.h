@@ -20,7 +20,7 @@ public:
 class BattleAI : public AI {
     // sigleton
 public:
-    inline string aiName() const override { return "mai(" __DATE__ ")"; };
+    inline string aiName() const override { return "mai-" __DATE__; };
     void setup(const Game::FirstInput&) override;
     Game::Command loop(const Game::Input&, const Game::Pack&) override;
 };
