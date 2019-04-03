@@ -1,6 +1,7 @@
 #include "Macro.h"
 #include "Game.h"
 #include "AI.h"
+#include "CaseGenerator.h"
 
 #include "MainAI.h"
 
@@ -138,4 +139,27 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
     }
 
     cout << "success" << endl;
+}
+
+
+
+// 入力を自動生成して実行
+// 敵AIなし，敵フィールドは常にリセット
+// 実行時間確認など
+void selfExecution() {
+
+    BattleAI ai;
+
+    Game::FirstInput firstinput;
+    Generator::generateFirstInput(firstinput);
+    ai.setup(firstinput);
+
+    Game::Input input; Generator::setDefaultInput(input);
+
+    repeat(turn, 80) {
+        auto cmd = ai.loop(input, firstinput.packs[turn]);
+        input.apply(cmd, Game::Command(0, 0), firstinput.packs[turn]);
+
+        Generator::setDefaultPlayer(input.en);
+    }
 }

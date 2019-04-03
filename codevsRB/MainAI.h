@@ -10,3 +10,8 @@ void execAI(istream& fin, ostream& fout);
 // fme : 自分の出力結果ファイルのfd
 // fen : 相手の出力結果ファイルのfd
 void validateSimulator(istream& fin, istream& fme, istream& fen);
+
+// 入力を自動生成して実行
+// 敵AIなし，敵フィールドは常にリセット
+// 実行時間確認など
+void selfExecution();

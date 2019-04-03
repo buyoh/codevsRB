@@ -10,6 +10,7 @@ void exit_help() {
         "モード選択" "\n"
         " --assertion : assertion." "\n"
         "             : --stdin, --stdout, --stdout2 が必要." "\n"
+        " --self      : ランダムな入力を内部で生成，実行．入出力なし．" "\n"
         "引数" "\n"
         " --stdin   <filename> : assertion 用. stdin の代わりに filename を使用." "\n"
         " --stdout  <filename> : assertion 用. stdout の代わりに filename を使用." "\n"
@@ -54,6 +55,10 @@ int main(int argc, char** argv) {
             else if (strcmp(argv[p], "--assertion") == 0) {
                 if (mode != 0) exit_invalidOption();
                 mode = 'a';
+            }
+            else if (strcmp(argv[p], "--self") == 0) {
+                if (mode != 0) exit_invalidOption();
+                mode = 's';
             }
             else if (strcmp(argv[p], "--stdin") == 0) {
                 if (p + 1 >= argc) exit_invalidOption();
@@ -103,6 +108,12 @@ int main(int argc, char** argv) {
         }
 
         validateSimulator(fi, fo1, fo2);
+        break;
+    }
+    case 's': {
+        // selfモード
+
+        selfExecution();
         break;
     }
     default:

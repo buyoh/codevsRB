@@ -13,6 +13,8 @@ Global
 		Debug(p)|x86 = Debug(p)|x86
 		Debug(verify)|x64 = Debug(verify)|x64
 		Debug(verify)|x86 = Debug(verify)|x86
+		Release(selfexec)|x64 = Release(selfexec)|x64
+		Release(selfexec)|x86 = Release(selfexec)|x86
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
@@ -25,6 +27,10 @@ Global
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x64.Build.0 = Debug(pure)|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x86.ActiveCfg = Debug(pure)|Win32
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x86.Build.0 = Debug(pure)|Win32
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release(selfexec)|x64.ActiveCfg = Release(selfexec)|x64
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release(selfexec)|x64.Build.0 = Release(selfexec)|x64
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release(selfexec)|x86.ActiveCfg = Release(selfexec)|Win32
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release(selfexec)|x86.Build.0 = Release(selfexec)|Win32
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release|x64.ActiveCfg = Release|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release|x64.Build.0 = Release|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Release|x86.ActiveCfg = Release|Win32
@@ -37,6 +43,10 @@ Global
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Debug(verify)|x64.Build.0 = Debug(pure)|x64
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Debug(verify)|x86.ActiveCfg = Debug(pure)|Win32
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Debug(verify)|x86.Build.0 = Debug(pure)|Win32
+		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release(selfexec)|x64.ActiveCfg = Release(selfexec)|x64
+		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release(selfexec)|x64.Build.0 = Release(selfexec)|x64
+		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release(selfexec)|x86.ActiveCfg = Release(selfexec)|Win32
+		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release(selfexec)|x86.Build.0 = Release(selfexec)|Win32
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release|x64.ActiveCfg = Release|x64
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release|x64.Build.0 = Release|x64
 		{D315C49C-7156-4E16-91D5-6D04610113C4}.Release|x86.ActiveCfg = Release|Win32
