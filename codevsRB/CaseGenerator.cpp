@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Input.h"
 
 namespace Generator {
     static mt19937_64 mt;

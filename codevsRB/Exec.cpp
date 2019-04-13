@@ -1,9 +1,10 @@
 #include "Macro.h"
 #include "Game.h"
+#include "Input.h"
 #include "AI.h"
 #include "CaseGenerator.h"
 
-#include "MainAI.h"
+#include "Exec.h"
 
 
 // finCfout‚ğ’Ê‚¶‚ÄÀs‚·‚é

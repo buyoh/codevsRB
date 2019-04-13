@@ -1,6 +1,7 @@
 
 #include "Macro.h"
 #include "Game.h"
+#include "Input.h"
 #include "AI.h"
 #include "Time.h"
 

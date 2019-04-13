@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "../codevsRB/Game.h"
-#include "../codevsRB/MainAI.h"
+//#include "../codevsRB/Exec.h"
 
 TEST(PackTest, PackRotation) {
     Game::Pack pack = { 1,2,4,3 };
@@ -56,10 +56,10 @@ TEST(FieldTest, ChainHorizontal) {
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
 
-    field.insert(pack1, W-4);
+    field.insert(pack1, W - 4);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, W-2);
+    field.insert(pack2, W - 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
@@ -70,19 +70,19 @@ TEST(FieldTest, ChainVertical) {
     Pack pack1 = { 4,9,9,9 };
     Pack pack2 = { 9,6,9,9 };
     Field field;
-    field.insert(pack1, 0);
+    EXPECT_TRUE(field.insert(pack1, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, 0);
+    EXPECT_TRUE(field.insert(pack2, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
 
-    field.insert(pack1, W-2);
+    EXPECT_TRUE(field.insert(pack1, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, W-2);
+    EXPECT_TRUE(field.insert(pack2, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
@@ -94,19 +94,19 @@ TEST(FieldTest, ChainDiagonal1) {
     Pack pack2 = { 9,4,9,9 }; // pack2が上
     Pack pack1 = { 9,9,6,9 }; // 先に落ちるのはpack1
     Field field;
-    field.insert(pack1, 0);
+    EXPECT_TRUE(field.insert(pack1, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, 0);
+    EXPECT_TRUE(field.insert(pack2, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
 
-    field.insert(pack1, W - 2);
+    EXPECT_TRUE(field.insert(pack1, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, W - 2);
+    EXPECT_TRUE(field.insert(pack2, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
@@ -118,19 +118,19 @@ TEST(FieldTest, ChainDiagonal2) {
     Pack pack2 = { 9,9,9,4 }; // pack2が上
     Pack pack1 = { 6,9,9,9 };
     Field field;
-    field.insert(pack1, 0);
+    EXPECT_TRUE(field.insert(pack1, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, 0);
+    EXPECT_TRUE(field.insert(pack2, 0));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
 
-    field.insert(pack1, W - 2);
+    EXPECT_TRUE(field.insert(pack1, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
-    field.insert(pack2, W - 2);
+    EXPECT_TRUE(field.insert(pack2, W - 2));
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
@@ -144,10 +144,10 @@ TEST(FieldTest, OverflowField) {
     int height = 0;
     for (int lop = 0; lop < H; ++lop) {
 
-        field.insert(pack, 0);
+        EXPECT_TRUE(field.insert(pack, 0));
         bool ok = field.fall();
         height += 2;
-        if (height > HLimit) {
+        if (height >= HLimit) {
             EXPECT_FALSE(ok) << "fall will fail";
             break;
         }
@@ -195,56 +195,3 @@ TEST(FieldTest, Eliminate) {
 
     }
 }
-
-// あー分からん
-// TEST(SimulatorTest, Simulator) {
-// 
-//     using namespace Game;
-//     ifstream fin("../../stdin.txt");
-//     ifstream fme("../../stdout1.txt");
-//     ifstream fen("../../stdout2.txt");
-// 
-//     // validateSimulatorのコピペ可変
-// 
-//     // AI NAME
-//     // string myName, yourName;
-//     // fme >> myName;
-//     // fen >> yourName;
-// 
-//     // first input (packs)
-//     Game::FirstInput firstInput;
-//     firstInput.input(fin);
-// 
-//     bool first = true;
-// 
-//     Game::Command mycmd, encmd;
-//     Game::Input prev;
-// 
-// 
-//     while (true) {
-//         // turn input
-//         Game::Input input;
-//         input.input(fin);
-// 
-//         if (!first) {
-//             EXPECT_EQ(input.turnCount, prev.turnCount);
-//             EXPECT_TRUE(input.me.field == prev.me.field);
-//             EXPECT_EQ(input.me.ojama, prev.me.ojama);
-//             EXPECT_EQ(input.me.skill, prev.me.skill) ;
-//             EXPECT_TRUE(input.en.field == prev.en.field);
-//             EXPECT_EQ(input.en.ojama, prev.en.ojama);
-//             EXPECT_EQ(input.en.skill, prev.en.skill);
-//         }
-//         else {
-//             first = false;
-//         }
-// 
-//         fme >> mycmd;
-//         fen >> encmd;
-// 
-//         prev = input;
-//         prev.apply(mycmd, encmd, firstInput.packs[prev.turnCount]);
-// 
-//     }
-// 
-// }
