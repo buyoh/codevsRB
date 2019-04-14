@@ -10,7 +10,9 @@ void exit_help() {
         "モード選択" "\n"
         " --assertion : assertion." "\n"
         "             : --stdin, --stdout, --stdout2 が必要." "\n"
-        " --self      : ランダムな入力を内部で生成，実行．入出力なし．" "\n"
+        " --self      : ランダムな入力を内部で生成，実行．入出力なし．ベンチマーク用" "\n"
+        "AIオプション" "\n"
+        " --shuffle   : 1ターン目をランダム手にする" "\n"
         "引数" "\n"
         " --stdin   <filename> : assertion 用. stdin の代わりに filename を使用." "\n"
         " --stdout  <filename> : assertion 用. stdout の代わりに filename を使用." "\n"
@@ -71,6 +73,9 @@ int main(int argc, char** argv) {
             else if (strcmp(argv[p], "--stdout2") == 0) {
                 if (p + 1 >= argc) exit_invalidOption();
                 filename_cout2 = argv[++p];
+            }
+            else if (strcmp(argv[p], "--shuffle") == 0) {
+                execOptions.shuffleFirstCommand = true;
             }
         }
         else if (argv[p][0] == '-') {

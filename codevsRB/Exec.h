@@ -1,5 +1,10 @@
 #pragma once
 
+struct ExecOptions {
+    bool shuffleFirstCommand;
+};
+extern ExecOptions execOptions;
+
 // finCfout‚ğ’Ê‚¶‚ÄÀs‚·‚é
 // fin  : stdin
 // fout : stdout

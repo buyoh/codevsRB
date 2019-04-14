@@ -6,6 +6,8 @@
 #include "Time.h"
 #include "Score.h"
 
+#include "Exec.h"
+
 using namespace Game;
 
 
@@ -85,6 +87,7 @@ static vector<Command> solveSequence(const Input& input) {
 
     // éûä‘Ç™ãñÇ∑å¿ÇËíTçıÇ∑ÇÈ
     int loopcount = 0;
+    static int totaloppcount = 0;
     for (auto timer = TIME; MILLISEC(TIME - timer) < 2000; ) {
 
         repeat(depth, MaxDepth) {
@@ -115,6 +118,7 @@ static vector<Command> solveSequence(const Input& input) {
     }
 
     clog << "loop:" << loopcount << ", best:" << best.first << "\n";
+    clog << "totaloop: " << (totaloppcount += loopcount) << "\n";
     repeat(depth, MaxDepth + 1) {
         clog << stackedStates[depth].size() << endl;
     }
@@ -134,6 +138,13 @@ void BattleAI::setup(const Game::FirstInput& fi) {
 
 
 Command BattleAI::loop(const Input& input, const Pack& turnPack) {
+
+    if (input.turn == 0) {
+        if (execOptions.shuffleFirstCommand) {
+            auto r = random_device();
+            return Command((uniform_int_distribution<int>(0, W - 1))(r), 0);
+        }
+    }
 
     static vector<Command> pool;
     if (pool.empty()) {
