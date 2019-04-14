@@ -63,6 +63,14 @@ TEST(FieldTest, ChainHorizontal) {
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
+
+    field.fill(Game::None);
+    field.insert(pack1, 0);
+    field.insert(pack2, 2);
+    EXPECT_EQ(field.chain().first, 1);
+    field.insert(pack1, W - 4);
+    field.insert(pack2, W - 2);
+    EXPECT_EQ(field.chain().first, 1);
 }
 
 TEST(FieldTest, ChainVertical) {
@@ -87,6 +95,14 @@ TEST(FieldTest, ChainVertical) {
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
+
+    field.fill(Game::None);
+    field.insert(pack1, 0);
+    field.insert(pack2, 0);
+    EXPECT_EQ(field.chain().first, 1);
+    field.insert(pack1, W - 2);
+    field.insert(pack2, W - 2);
+    EXPECT_EQ(field.chain().first, 1);
 }
 
 TEST(FieldTest, ChainDiagonal1) {
@@ -111,6 +127,14 @@ TEST(FieldTest, ChainDiagonal1) {
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
+
+    field.fill(Game::None);
+    field.insert(pack1, 0);
+    field.insert(pack2, 0);
+    EXPECT_EQ(field.chain().first, 1);
+    field.insert(pack1, W - 2);
+    field.insert(pack2, W - 2);
+    EXPECT_EQ(field.chain().first, 1);
 }
 
 TEST(FieldTest, ChainDiagonal2) {
@@ -135,6 +159,14 @@ TEST(FieldTest, ChainDiagonal2) {
     EXPECT_EQ(field.eliminate(), 2);
     EXPECT_TRUE(field.fall());
     EXPECT_EQ(field.eliminate(), 0);
+
+    field.fill(Game::None);
+    field.insert(pack1, 0);
+    field.insert(pack2, 0);
+    EXPECT_EQ(field.chain().first, 1);
+    field.insert(pack1, W - 2);
+    field.insert(pack2, W - 2);
+    EXPECT_EQ(field.chain().first, 1);
 }
 
 TEST(FieldTest, OverflowField) {

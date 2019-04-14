@@ -46,8 +46,8 @@ namespace Game {
         // 範囲内ならtrue
         constexpr bool safe(int y, int x) const noexcept { return 0 <= y && y < Height && 0 <= x && x < Width; }
 
-        inline T& at(int y, int x) noexcept { assert(safe(y, x)); return data_[y + x * Height]; }
-        inline T at(int y, int x) const noexcept { assert(safe(y, x)); return data_[y + x * Height]; }
+        inline T& at(int y, int x) noexcept { return data_[y + x * Height]; }
+        inline T at(int y, int x) const noexcept { return data_[y + x * Height]; }
         inline T operator()(int y, int x) const noexcept { return data_[y + x*Height]; }
         inline T operator()(P p) const noexcept { return data_[p.y + p.x*Height]; }
         inline T& operator()(int y, int x) noexcept { return data_[y + x * Height]; }
@@ -121,6 +121,8 @@ namespace Game {
     class Field : public Matrix<int8_t, H, W> {
         //
 
+    private:
+
     public:
         inline Field() :Matrix() { }
 
@@ -138,6 +140,16 @@ namespace Game {
         // @return num of destroyed
         int eliminate();
 
+        // fallの部分実装
+        // @enabledCols trueな列を書き換える．mutable．
+        // @return HLimitを超えたか？
+        bool partialFall(array<bool, W>& enabledCols);
+
+        // Eliminateの部分実装
+        // @enabledCols trueな列を書き換える．mutable．
+        // @return 
+        int partialEliminate(array<bool, W>& enabledCols);
+
         // 5を爆発させる
         // @return num of destroyed
         int explode();
@@ -149,16 +161,8 @@ namespace Game {
         bool stackOjama();
 
         // fall->eliminateを繰り返す
-        // @return count of chain
-        inline int chain() {
-            int cnt = 0;
-            fall();
-            while (eliminate() > 0) {
-                ++cnt;
-                fall();
-            }
-            return cnt;
-        }
+        // @return <count of chain, HLimitを超えたか？>
+        pair<int, bool> chain();
 
 
         inline bool operator==(const Field& f) const {
@@ -194,50 +198,6 @@ namespace Game {
             std::swap(data_, cmd.data_);
         }
     };
-
-
-    //
-    // Score
-    // ===========================
-
-
-    class ChainScoreT {
-        static constexpr int Limit = 50;
-        int data_[Limit];
-    public:
-        constexpr ChainScoreT() :data_() {
-            for (int i = 1; i < Limit; ++i)
-                data_[i] = data_[i-1] + static_cast<int>(cpow(1.3, double(i)));
-        }
-        constexpr int operator[](int i) const { return data_[i]; }
-    };
-
-    class ChainSkillScoreT {
-        static constexpr int Limit = 50;
-        int data_[Limit];
-    public:
-        constexpr ChainSkillScoreT() :data_() {
-            for (int i = 1; i < Limit; ++i)
-                data_[i] = data_[i - 1] + static_cast<int>(cpow(1.3, double(i)));
-        }
-        constexpr int operator[](int i) const { return data_[i]; }
-    };
-
-    class BombScoreT {
-        static constexpr int Limit = 170;
-        int data_[Limit];
-    public:
-        constexpr BombScoreT() :data_() {
-            for (int i = 1; i < Limit; ++i)
-                data_[i] = static_cast<int>(25.0*cpow(2.0, double(i)/12.0));
-        }
-        constexpr int operator[](int i) const { return data_[i]; }
-    };
-
-    // なんもわからん
-    constexpr ChainScoreT ChainScore;
-    constexpr ChainSkillScoreT ChainSkillScore;
-    constexpr BombScoreT BombScore;
 
 
 

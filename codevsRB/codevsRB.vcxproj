@@ -256,9 +256,11 @@
     <ClInclude Include="AI.h" />
     <ClInclude Include="CaseGenerator.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameExt.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="Exec.h" />
+    <ClInclude Include="Score.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>

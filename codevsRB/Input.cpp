@@ -2,6 +2,7 @@
 #include "Macro.h"
 #include "Game.h"
 #include "Input.h"
+#include "Score.h"
 
 namespace Game {
 
@@ -16,18 +17,17 @@ namespace Game {
         int sender = 0;
         bool success = true;
 
+        array<bool, W> changedFlag; changedFlag.fill(true);
+
         if (cmd.skill()) {
             // 爆発
             int bcnt = field.explode();
-            success = field.fall();
             // 爆発スコア
             int sb = BombScore[bcnt];
 
-            // チェイン
-            while (field.eliminate() > 0) {
-                ++chain;
-                success = field.fall();
-            }
+            // 落下・チェイン
+            tie(chain, success) = field.chain();
+
             // スキルチェインスコア
             int ss = ChainSkillScore[chain];
 
@@ -39,10 +39,8 @@ namespace Game {
             success = field.insert(turnPack.rotated(cmd.rot()), cmd.xPos());
 
             // チェイン
-            while (field.eliminate() > 0) {
-                ++chain;
-                success = field.fall();
-            }
+            tie(chain, success) = field.chain();
+
             // チェインスコア
             int ss = ChainScore[chain];
 

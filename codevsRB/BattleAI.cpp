@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "AI.h"
 #include "Time.h"
+#include "Score.h"
 
 using namespace Game;
 
@@ -48,7 +49,7 @@ static inline int calcHeuristic(const Field& field, const Pack& milestonePack) {
         repeat(i, W/2 - 1) {
             Field f = field;
             f.insert(pack, i);
-            chmax(best, ChainScore[f.chain()]);
+            chmax(best, ChainScore[f.chain().first]);
         }
     }
     return best;
@@ -74,7 +75,7 @@ static vector<Command> solveSequence(const Input& input) {
             Command cmd(x, r);
             SearchState ss{ input.me.field, vector<Command>{cmd}, 0 };
             ss.field.insert(pack, x);
-            ss.score = ChainScore[ss.field.chain()];
+            ss.score = ChainScore[ss.field.chain().first];
             ss.heuristic = calcHeuristic(ss.field, milestonePack);
             stackedStates[0].push(move(ss));
         }
@@ -96,7 +97,7 @@ static vector<Command> solveSequence(const Input& input) {
                     SearchState ss = currss;
 
                     ss.field.insert(pack, x);
-                    int chainscore = ChainScore[ss.field.chain()];
+                    int chainscore = ChainScore[ss.field.chain().first];
                     if (!ss.field.fall()) continue;
                     int heuristic = calcHeuristic(ss.field, milestonePack);
                     ss.commands.push_back(Command(x, r));
