@@ -28,7 +28,8 @@ namespace Game {
 
         template<typename istream>
         void input(istream& is) {
-            is >> timeMsec >> ojama >> skill;
+            int score; // TODO: 仕様変更したかな？
+            is >> timeMsec >> ojama >> skill >> score;
             rrepeat(y, HLimit) {
                 repeat(x, W) {
                     int v; is >> v;

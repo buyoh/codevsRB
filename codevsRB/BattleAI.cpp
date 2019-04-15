@@ -141,7 +141,7 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 
     if (input.turn == 0) {
         if (execOptions.shuffleFirstCommand) {
-            auto r = random_device();
+            random_device r;
             return Command((uniform_int_distribution<int>(0, W - 1))(r), 0);
         }
     }

@@ -249,6 +249,7 @@
     <ClCompile Include="CaseGenerator.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="IntervalHeap.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Exec.cpp" />
   </ItemGroup>
@@ -258,6 +259,7 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameExt.h" />
     <ClInclude Include="Input.h" />
+    <ClInclude Include="IntervalHeap.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="Exec.h" />
     <ClInclude Include="Score.h" />
