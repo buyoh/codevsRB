@@ -1,5 +1,6 @@
 #pragma once
 
+#include "./Macro.h"
 
 template<typename T>
 class IntervalHeap {

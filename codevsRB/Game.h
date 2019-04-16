@@ -237,7 +237,6 @@ namespace Game {
 
     inline istream& operator >>(istream& is, Command& cmd) {
         string c; is >> c;
-        assert(c.size() == 1);
         if (c[0] == 'S') cmd = Command::Skill;
         else {
             int p; is >> p;
