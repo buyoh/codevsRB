@@ -42,16 +42,37 @@ static decltype(FirstInput::packs) packs;
 //
 
 
+// ojamaが積もったか？
+// 予めfallされていること
+static bool checkStackedOjama(const Field& field) {
+    repeat(x, W){
+        bool lasto = false; // 直前がojamaだった
+        repeat(y, H) {
+            if (field(y, x) == None) { // 空虚に到達
+                if (!lasto) return false; // 直前がojamaでないならば，積もっていない
+                break;
+            }
+        }
+    }
+    return true;
+}
+
+
+//
+
+
 // field: 対象
 // milestonePack: 発火対象
-static inline int calcHeuristic(const Field& field, const Pack& milestonePack) {
+static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
     int best = 0;
-    repeat(r, 4) {
-        auto pack = milestonePack.rotated(r);
-        repeat(i, W/2 - 1) {
-            Field f = field;
-            f.insert(pack, i);
-            chmax(best, ChainScore[f.chain().first]);
+    iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd){
+        repeat(r, 4) {
+            auto pack = packs[mpi].rotated(r);
+            repeat(i, W / 2 - 1) {
+                Field f = field;
+                f.insert(pack, i*2);
+                chmax(best, ChainScore[f.chain().first]);
+            }
         }
     }
     return best;
@@ -64,11 +85,12 @@ static vector<Command> solveSequence(const Input& input) {
     cerr << "solve: " << input.turn << " ";
 
     // 先読み探索の深さ
-    const int MaxDepth = 10;
+    const int MaxDepth = 14;
     // ちょくだいさーち
     priority_queue<SearchState> stackedStates[MaxDepth + 1];
 
-    const Pack& milestonePack = packs[input.turn + MaxDepth - 1];
+    const int milestoneIdxBegin = input.turn + MaxDepth - 6;
+    const int milestoneIdxEnd = input.turn + MaxDepth;
 
     // 今のターンのコマンドを総当たり
     repeat(r, 4) {
@@ -78,7 +100,7 @@ static vector<Command> solveSequence(const Input& input) {
             SearchState ss{ input.me.field, vector<Command>{cmd}, 0 };
             ss.field.insert(pack, x);
             ss.score = ChainScore[ss.field.chain().first];
-            ss.heuristic = calcHeuristic(ss.field, milestonePack);
+            ss.heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
             stackedStates[0].push(move(ss));
         }
     }
@@ -88,7 +110,7 @@ static vector<Command> solveSequence(const Input& input) {
     // 時間が許す限り探索する
     int loopcount = 0;
     static int totaloppcount = 0;
-    for (auto timer = TIME; MILLISEC(TIME - timer) < 2000; ) {
+    for (auto timer = TIME; MILLISEC(TIME - timer) < 4000; ) {
 
         repeat(depth, MaxDepth) {
             if (stackedStates[depth].empty()) continue;
@@ -102,7 +124,7 @@ static vector<Command> solveSequence(const Input& input) {
                     ss.field.insert(pack, x);
                     int chainscore = ChainScore[ss.field.chain().first];
                     if (!ss.field.fall()) continue;
-                    int heuristic = calcHeuristic(ss.field, milestonePack);
+                    int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
                     ss.commands.push_back(Command(x, r));
                     // chmax(ss.score, cs);
                     ss.heuristic += heuristic;
@@ -147,7 +169,7 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
     }
 
     static vector<Command> pool;
-    if (pool.empty()) {
+    if (pool.empty() || checkStackedOjama(input.me.field)) {
         pool = solveSequence(input);
         reverse(ALL(pool));
     }
