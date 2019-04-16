@@ -11,6 +11,8 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug(p)|x64 = Debug(p)|x64
 		Debug(p)|x86 = Debug(p)|x86
+		Debug(selfexec)|x64 = Debug(selfexec)|x64
+		Debug(selfexec)|x86 = Debug(selfexec)|x86
 		Debug(verify)|x64 = Debug(verify)|x64
 		Debug(verify)|x86 = Debug(verify)|x86
 		Debug|x64 = Debug|x64
@@ -25,6 +27,10 @@ Global
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(p)|x64.Build.0 = Debug|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(p)|x86.ActiveCfg = Debug|Win32
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(p)|x86.Build.0 = Debug|Win32
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(selfexec)|x64.ActiveCfg = Debug(selfexec)|x64
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(selfexec)|x64.Build.0 = Debug(selfexec)|x64
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(selfexec)|x86.ActiveCfg = Debug(selfexec)|Win32
+		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(selfexec)|x86.Build.0 = Debug(selfexec)|Win32
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x64.ActiveCfg = Debug(pure)|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x64.Build.0 = Debug(pure)|x64
 		{9F7F25EB-E448-435F-A6BB-56FB56DC2F9B}.Debug(verify)|x86.ActiveCfg = Debug(pure)|Win32
@@ -45,6 +51,10 @@ Global
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(p)|x64.Build.0 = Debug|x64
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(p)|x86.ActiveCfg = Debug|Win32
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(p)|x86.Build.0 = Debug|Win32
+		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(selfexec)|x64.ActiveCfg = Debug(selfexec)|x64
+		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(selfexec)|x64.Build.0 = Debug(selfexec)|x64
+		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(selfexec)|x86.ActiveCfg = Debug(selfexec)|Win32
+		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(selfexec)|x86.Build.0 = Debug(selfexec)|Win32
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(verify)|x64.ActiveCfg = Debug|x64
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(verify)|x64.Build.0 = Debug|x64
 		{336AD1FC-AB30-4E86-A61E-B5FD58FDBC57}.Debug(verify)|x86.ActiveCfg = Debug|Win32

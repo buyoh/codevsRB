@@ -137,7 +137,7 @@ public:
         else if (size_ == 2) {
             swap(data_.front().first, data_.front().second);
         }
-        else if ((size_ & 1) == 0) {
+        else if ((size_ & 1) == 1) {
             // 現在偶数個あり，奇数個に減る
             // 末尾と交換
             swap(data_.front().first, data_.back().second);
@@ -162,7 +162,7 @@ public:
         }
         else if (size_ == 2) {
         }
-        else if ((size_ & 1) == 0) {
+        else if ((size_ & 1) == 1) {
             // 現在偶数個あり，奇数個に減る
             // 末尾と交換
             swap(data_.front().second, data_.back().second);
