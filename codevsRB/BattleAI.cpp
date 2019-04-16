@@ -42,8 +42,8 @@ static decltype(FirstInput::packs) packs;
 //
 
 
-// field: ‘ÎÛ
-// milestonePack: ”­‰Î‘ÎÛ
+// field: å¯¾è±¡
+// milestonePack: ç™ºç«å¯¾è±¡
 static inline int calcHeuristic(const Field& field, const Pack& milestonePack) {
     int best = 0;
     repeat(r, 4) {
@@ -63,14 +63,14 @@ static vector<Command> solveSequence(const Input& input) {
 
     cerr << "solve: " << input.turn << " ";
 
-    // æ“Ç‚İ’Tõ‚Ì[‚³
+    // å…ˆèª­ã¿æ¢ç´¢ã®æ·±ã•
     const int MaxDepth = 10;
-    // ‚¿‚å‚­‚¾‚¢‚³[‚¿
+    // ã¡ã‚‡ãã ã„ã•ãƒ¼ã¡
     priority_queue<SearchState> stackedStates[MaxDepth + 1];
 
     const Pack& milestonePack = packs[input.turn + MaxDepth - 1];
 
-    // ¡‚Ìƒ^[ƒ“‚ÌƒRƒ}ƒ“ƒh‚ğ‘“–‚½‚è
+    // ä»Šã®ã‚¿ãƒ¼ãƒ³ã®ã‚³ãƒãƒ³ãƒ‰ã‚’ç·å½“ãŸã‚Š
     repeat(r, 4) {
         auto pack = packs[input.turn].rotated(r);
         repeat(x, W - 1) {
@@ -85,7 +85,7 @@ static vector<Command> solveSequence(const Input& input) {
 
     Tag<int, vector<Command>> best(-1, vector<Command>());
 
-    // ŠÔ‚ª‹–‚·ŒÀ‚è’Tõ‚·‚é
+    // æ™‚é–“ãŒè¨±ã™é™ã‚Šæ¢ç´¢ã™ã‚‹
     int loopcount = 0;
     static int totaloppcount = 0;
     for (auto timer = TIME; MILLISEC(TIME - timer) < 2000; ) {

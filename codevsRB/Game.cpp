@@ -16,9 +16,9 @@ namespace Game {
             repeat(y, H) {
                 if (at(y, x) != None) {
                     while (i < H && at(i, x) != None) ++i;
-                    // ‚±‚Ì“_‚Å, i‚ÍNone‚ğw‚µ‚Ä‚¢‚é
-                    // iˆÈ‰º‚ÉNone‚Æ‚È‚éƒuƒƒbƒN‚Í‘¶İ‚µ‚È‚¢
-                    // i‚æ‚èã‚Éy‚ª‚ ‚é‚È‚ç‚ÎCy‚ÌˆÊ’u‚ÌƒuƒƒbƒN‚ği‚É‚Á‚Ä‚¢‚­
+                    // ã“ã®æ™‚ç‚¹ã§, iã¯Noneã‚’æŒ‡ã—ã¦ã„ã‚‹
+                    // iä»¥ä¸‹ã«Noneã¨ãªã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã¯å­˜åœ¨ã—ãªã„
+                    // iã‚ˆã‚Šä¸Šã«yãŒã‚ã‚‹ãªã‚‰ã°ï¼Œyã®ä½ç½®ã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’iã«æŒã£ã¦ã„ã
                     if (i < y) std::swap(at(i, x), at(y, x));
                 }
             }
@@ -32,17 +32,17 @@ namespace Game {
         bool ok = true;
         repeat(x, W) {
             if (!enabledCols[x]) continue;
-            enabledCols[x] = false; // ˆê’U‘‚«Š·‚í‚ç‚È‚©‚Á‚½‚±‚Æ‚É‚·‚é
+            enabledCols[x] = false; // ä¸€æ—¦æ›¸ãæ›ã‚ã‚‰ãªã‹ã£ãŸã“ã¨ã«ã™ã‚‹
             int i = 0;
             repeat(y, H) {
                 if (at(y, x) != None) {
                     while (i < H && at(i, x) != None) ++i;
-                    // ‚±‚Ì“_‚Å, i‚ÍNone‚ğw‚µ‚Ä‚¢‚é
-                    // iˆÈ‰º‚ÉNone‚Æ‚È‚éƒuƒƒbƒN‚Í‘¶İ‚µ‚È‚¢
-                    // i‚æ‚èã‚Éy‚ª‚ ‚é‚È‚ç‚ÎCy‚ÌˆÊ’u‚ÌƒuƒƒbƒN‚ği‚É‚Á‚Ä‚¢‚­
+                    // ã“ã®æ™‚ç‚¹ã§, iã¯Noneã‚’æŒ‡ã—ã¦ã„ã‚‹
+                    // iä»¥ä¸‹ã«Noneã¨ãªã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã¯å­˜åœ¨ã—ãªã„
+                    // iã‚ˆã‚Šä¸Šã«yãŒã‚ã‚‹ãªã‚‰ã°ï¼Œyã®ä½ç½®ã®ãƒ–ãƒ­ãƒƒã‚¯ã‚’iã«æŒã£ã¦ã„ã
                     if (i < y)
                         std::swap(at(i, x), at(y, x)),
-                        enabledCols[x] = true; // ‘‚«Š·‚í‚Á‚½‚Ì‚Åtrue‚É‚·‚é
+                        enabledCols[x] = true; // æ›¸ãæ›ã‚ã£ãŸã®ã§trueã«ã™ã‚‹
                 }
             }
             ok &= (i < HLimit);
@@ -51,19 +51,19 @@ namespace Game {
     }
 
 
-    // Pack‚ğ’u‚­i‚·‚Å‚É—‚Æ‚µ‚½ó‘Ô‚Åj
+    // Packã‚’ç½®ãï¼ˆã™ã§ã«è½ã¨ã—ãŸçŠ¶æ…‹ã§ï¼‰
     bool Field::insert(const Pack& pack, int x) {
 
-        // ƒpƒbƒN‚ª—‚¿‚é‚‚³‚ğ’T‚·
+        // ãƒ‘ãƒƒã‚¯ãŒè½ã¡ã‚‹é«˜ã•ã‚’æ¢ã™
         int y1 = 0;
         while (y1 < H - 1 && at(y1, x) != None) ++y1;
         int y2 = 0;
         while (y2 < H - 1 && at(y2, x + 1) != None) ++y2;
 
-        // ’u‚¯‚È‚¢
+        // ç½®ã‘ãªã„
         if (y1 >= H - 1 || y2 >= H - 1) return false;
 
-        // ’u‚­
+        // ç½®ã
         if (pack(1,0) != None){
             at(y1 + 1, x) = pack(0, 0);
             at(y1, x) = pack(1, 0);
@@ -85,7 +85,7 @@ namespace Game {
 
     int Field::eliminate() {
         static vector<pair<int8_t, int8_t>> flag; flag.clear();
-        // Á‚³‚ê‚éƒuƒƒbƒN‚ğƒ}[ƒN‚·‚é
+        // æ¶ˆã•ã‚Œã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã‚’ãƒãƒ¼ã‚¯ã™ã‚‹
         repeat(x, W) {
             repeat(y, H) {
                 auto a = at(y, x);
@@ -105,7 +105,7 @@ namespace Game {
             }
         }
 
-        // ƒ}[ƒN‚µ‚½“_‚ğÁ‹
+        // ãƒãƒ¼ã‚¯ã—ãŸç‚¹ã‚’æ¶ˆå»
         int cnt = 0;
         for (auto p : flag) {
             cnt += at(p.first, p.second) > 0;
@@ -119,9 +119,9 @@ namespace Game {
     //
     int Field::partialEliminate(array<bool, W>& enabledCols) {
         static vector<pair<int8_t, int8_t>> flag; flag.clear();
-        // Á‚³‚ê‚éƒuƒƒbƒN‚ğƒ}[ƒN‚·‚é
+        // æ¶ˆã•ã‚Œã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã‚’ãƒãƒ¼ã‚¯ã™ã‚‹
         repeat(x, W - 1) {
-            // ¡Œ©‚Ä‚¢‚éx‚Ü‚½‚Í‚»‚Ì‰E—×‚è‚ªƒ}[ƒN‚³‚ê‚Ä‚¢‚½‚çC‘‚«Š·‚¦‚é‰Â”\«‚ª‚ ‚é
+            // ä»Šè¦‹ã¦ã„ã‚‹xã¾ãŸã¯ãã®å³éš£ã‚ŠãŒãƒãƒ¼ã‚¯ã•ã‚Œã¦ã„ãŸã‚‰ï¼Œæ›¸ãæ›ãˆã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹
             if (!enabledCols[x] && !enabledCols[x + 1]) continue;
             repeat(y, H) {
                 auto a = at(y, x);
@@ -140,7 +140,7 @@ namespace Game {
                     flag.emplace_back(y + 1, x);
             }
         }
-        // W-1 —ñ
+        // W-1 åˆ—
         if (enabledCols[W - 1]){
             const int x = W - 1;
             repeat(y, H - 1) {
@@ -155,7 +155,7 @@ namespace Game {
         // reset
         enabledCols.fill(false);
 
-        // ƒ}[ƒN‚µ‚½“_‚ğÁ‹
+        // ãƒãƒ¼ã‚¯ã—ãŸç‚¹ã‚’æ¶ˆå»
         int cnt = 0;
         for (auto p : flag) {
             cnt += at(p.first, p.second) > 0;
@@ -170,7 +170,7 @@ namespace Game {
     int Field::explode() {
         Matrix<int8_t, H, W> flag;
 
-        // Á‚³‚ê‚éƒuƒƒbƒN‚ğƒ}[ƒN‚·‚é
+        // æ¶ˆã•ã‚Œã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã‚’ãƒãƒ¼ã‚¯ã™ã‚‹
         repeat(x, W) {
             repeat(y, H) {
                 if (at(y, x) == Ojama || at(y, x) == 0 || at(y, x) == 5) continue;
@@ -182,7 +182,7 @@ namespace Game {
             }
         }
 
-        // ƒ}[ƒN‚µ‚½“_‚ğÁ‹
+        // ãƒãƒ¼ã‚¯ã—ãŸç‚¹ã‚’æ¶ˆå»
         int cnt = 0;
         repeat(x, W) {
             repeat(y, H) {

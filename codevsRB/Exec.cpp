@@ -11,7 +11,7 @@
 ExecOptions execOptions;
 
 
-// finCfout‚ğ’Ê‚¶‚ÄÀs‚·‚é
+// finï¼Œfoutã‚’é€šã˜ã¦å®Ÿè¡Œã™ã‚‹
 // fin  : stdin
 // fout : stdout
 void execAI(istream& fin, ostream& fout) {
@@ -33,10 +33,10 @@ void execAI(istream& fin, ostream& fout) {
 }
 
 
-// ƒVƒ~ƒ…ƒŒ[ƒ^‚Ì“®ìŠm”F
-// fin : ©•ª‚Ö‚Ì“ü—Íƒf[ƒ^‚ğw‚·fd
-// fme : ©•ª‚Ìo—ÍŒ‹‰Êƒtƒ@ƒCƒ‹‚Ìfd
-// fen : ‘Šè‚Ìo—ÍŒ‹‰Êƒtƒ@ƒCƒ‹‚Ìfd
+// ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚¿ã®å‹•ä½œç¢ºèª
+// fin : è‡ªåˆ†ã¸ã®å…¥åŠ›ãƒ‡ãƒ¼ã‚¿ã‚’æŒ‡ã™fd
+// fme : è‡ªåˆ†ã®å‡ºåŠ›çµæœãƒ•ã‚¡ã‚¤ãƒ«ã®fd
+// fen : ç›¸æ‰‹ã®å‡ºåŠ›çµæœãƒ•ã‚¡ã‚¤ãƒ«ã®fd
 void validateSimulator(istream& fin, istream& fme, istream& fen) {
     using namespace Game;
 
@@ -148,9 +148,9 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
 
 
 
-// “ü—Í‚ğ©“®¶¬‚µ‚ÄÀs
-// “GAI‚È‚µC“GƒtƒB[ƒ‹ƒh‚Íí‚ÉƒŠƒZƒbƒg
-// ÀsŠÔŠm”F‚È‚Ç
+// å…¥åŠ›ã‚’è‡ªå‹•ç”Ÿæˆã—ã¦å®Ÿè¡Œ
+// æ•µAIãªã—ï¼Œæ•µãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã¯å¸¸ã«ãƒªã‚»ãƒƒãƒˆ
+// å®Ÿè¡Œæ™‚é–“ç¢ºèªãªã©
 void selfExecution() {
 
     BattleAI ai;

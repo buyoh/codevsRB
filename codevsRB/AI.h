@@ -3,8 +3,8 @@
 #include "Game.h"
 
 
-// ƒQ[ƒ€AI‚Ì’ŠÛƒNƒ‰ƒX
-// ŽÀ‘•‚·‚×‚«ŠÖ”‚½‚¿
+// ã‚²ãƒ¼ãƒ AIã®æŠ½è±¡ã‚¯ãƒ©ã‚¹
+// å®Ÿè£…ã™ã¹ãé–¢æ•°ãŸã¡
 class AI {
 public:
 

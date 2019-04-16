@@ -1,21 +1,21 @@
 #pragma once
 
-#include "./Macro.h"
+#include "Macro.h"
 
 template<typename T>
 class IntervalHeap {
-    // ƒAƒ‹ƒSƒŠƒYƒ€ŠT—v
-    // Heap‚ÌŠeƒm[ƒh‚Í1~2‚Â‚Ì—v‘f‚ğ‚ÂD‚±‚Ì2‚Â‚Ì—v‘f‚Í‡˜ŠÖŒW‚É‚æ‚Á‚Ä‹æŠÔ‚Æ‚İ‚È‚·‚±‚Æ‚ª‚Å‚«‚éD
-    // Ÿ‚ğ–‚½‚·‚æ‚¤‚ÉHeap‚ğ•Û‚ÂFqºe
+    // ã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ æ¦‚è¦
+    // Heapã®å„ãƒãƒ¼ãƒ‰ã¯1~2ã¤ã®è¦ç´ ã‚’æŒã¤ï¼ã“ã®2ã¤ã®è¦ç´ ã¯é †åºé–¢ä¿‚ã«ã‚ˆã£ã¦åŒºé–“ã¨ã¿ãªã™ã“ã¨ãŒã§ãã‚‹ï¼
+    // æ¬¡ã‚’æº€ãŸã™ã‚ˆã†ã«Heapã‚’ä¿ã¤ï¼šå­âŠ†è¦ª
 
     using TT = pair<T, T>; // first <= second
 
-    vector<TT> data_; // data_‚Ì”z—ñ—v‘f‚Í2‚Â‚Ì—v‘f‚ğ‚ÂDdata_.size() ‚Í (size_ + 1) / 2 ‚Æ“™‰¿
-    int size_; // ƒf[ƒ^\‘¢‚ª‚Â—v‘f‚Ì”
+    vector<TT> data_; // data_ã®é…åˆ—è¦ç´ ã¯2ã¤ã®è¦ç´ ã‚’æŒã¤ï¼data_.size() ã¯ (size_ + 1) / 2 ã¨ç­‰ä¾¡
+    int size_; // ãƒ‡ãƒ¼ã‚¿æ§‹é€ ãŒæŒã¤è¦ç´ ã®æ•°
 
-    // data_[ptr]‚Í1‚Â‚Ì—v‘f‚µ‚©‚Á‚Ä‚¢‚È‚¢H
+    // data_[ptr]ã¯1ã¤ã®è¦ç´ ã—ã‹æŒã£ã¦ã„ãªã„ï¼Ÿ
     inline bool one(int ptr) const noexcept {
-        // ptr == ––”ö ‚©‚Â ––”ö‚ğ1—v‘f‚µ‚©‚½‚È‚¢
+        // ptr == æœ«å°¾ ã‹ã¤ æœ«å°¾ã‚’1è¦ç´ ã—ã‹æŒãŸãªã„
         return ptr == (size_ - 1) / 2 && (size_ & 1) == 1;
     }
 
@@ -35,7 +35,7 @@ public:
 
     // TODO forward
     inline void push(const T & elem) {
-        // 1. ‚Æ‚è‚ ‚¦‚¸––”ö‚É’Ç‰Á
+        // 1. ã¨ã‚Šã‚ãˆãšæœ«å°¾ã«è¿½åŠ 
         if ((size_ & 1) == 0) {
             data_.emplace_back(elem, T());
         }
@@ -45,7 +45,7 @@ public:
                 swap(data_.back().first, data_.back().second);
         }
         ++size_;
-        // 2. ®‡
+        // 2. æ•´åˆ
         fixup((size_ - 1) / 2);
     }
 
@@ -68,17 +68,17 @@ public:
             swap(data_.front().first, data_.front().second);
         }
         else if ((size_ & 1) == 0) {
-            // Œ»İ‹ô”ŒÂ‚ ‚èCŠï”ŒÂ‚ÉŒ¸‚é
-            // ––”ö‚ÆŒğŠ·
+            // ç¾åœ¨å¶æ•°å€‹ã‚ã‚Šï¼Œå¥‡æ•°å€‹ã«æ¸›ã‚‹
+            // æœ«å°¾ã¨äº¤æ›
             swap(data_.front().first, data_.back().second);
             fixdown(0);
         }
         else {
-            // Œ»İŠï”ŒÂ‚ ‚èC‹ô”ŒÂ‚ÉŒ¸‚é
-            // ––”ö‚ÆŒğŠ·
+            // ç¾åœ¨å¥‡æ•°å€‹ã‚ã‚Šï¼Œå¶æ•°å€‹ã«æ¸›ã‚‹
+            // æœ«å°¾ã¨äº¤æ›
             swap(data_.front().first, data_.back().first);
             data_.pop_back();
-            // ®‡
+            // æ•´åˆ
             fixdown(0);
         }
     }
@@ -93,18 +93,18 @@ public:
         else if (size_ == 2) {
         }
         else if ((size_ & 1) == 0) {
-            // Œ»İ‹ô”ŒÂ‚ ‚èCŠï”ŒÂ‚ÉŒ¸‚é
-            // ––”ö‚ÆŒğŠ·
+            // ç¾åœ¨å¶æ•°å€‹ã‚ã‚Šï¼Œå¥‡æ•°å€‹ã«æ¸›ã‚‹
+            // æœ«å°¾ã¨äº¤æ›
             swap(data_.front().second, data_.back().second);
-            // ®‡
+            // æ•´åˆ
             fixdown(0);
         }
         else {
-            // Œ»İŠï”ŒÂ‚ ‚èC‹ô”ŒÂ‚ÉŒ¸‚é
-            // ––”ö‚ÆŒğŠ·
+            // ç¾åœ¨å¥‡æ•°å€‹ã‚ã‚Šï¼Œå¶æ•°å€‹ã«æ¸›ã‚‹
+            // æœ«å°¾ã¨äº¤æ›
             swap(data_.front().second, data_.back().first);
             data_.pop_back();
-            // ®‡
+            // æ•´åˆ
             fixdown(0);
         }
     }

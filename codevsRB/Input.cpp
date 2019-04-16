@@ -6,9 +6,9 @@
 
 namespace Game {
 
-    // ƒRƒ}ƒ“ƒh‚ğ“K‰‚µ‚ÄCƒtƒB[ƒ‹ƒh‚ğ•Ï‰»‚³‚¹‚éD
-    // ƒXƒLƒ‹ƒQ[ƒW“™‚ÍˆêØ•Ï‰»‚³‚¹‚È‚¢
-    // ‰ñ“]‘O‚ÌƒpƒbƒN‚ğ—^‚¦‚é
+    // ã‚³ãƒãƒ³ãƒ‰ã‚’é©å¿œã—ã¦ï¼Œãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’å¤‰åŒ–ã•ã›ã‚‹ï¼
+    // ã‚¹ã‚­ãƒ«ã‚²ãƒ¼ã‚¸ç­‰ã¯ä¸€åˆ‡å¤‰åŒ–ã•ã›ãªã„
+    // å›è»¢å‰ã®ãƒ‘ãƒƒã‚¯ã‚’ä¸ãˆã‚‹
     // @return: score, chain, sender, success
     tuple<int, int, int, bool> Player::apply(Command cmd, const Pack& turnPack) {
 
@@ -20,28 +20,28 @@ namespace Game {
         array<bool, W> changedFlag; changedFlag.fill(true);
 
         if (cmd.skill()) {
-            // ”š”­
+            // çˆ†ç™º
             int bcnt = field.explode();
-            // ”š”­ƒXƒRƒA
+            // çˆ†ç™ºã‚¹ã‚³ã‚¢
             int sb = BombScore[bcnt];
 
-            // —‰ºEƒ`ƒFƒCƒ“
+            // è½ä¸‹ãƒ»ãƒã‚§ã‚¤ãƒ³
             tie(chain, success) = field.chain();
 
-            // ƒXƒLƒ‹ƒ`ƒFƒCƒ“ƒXƒRƒA
+            // ã‚¹ã‚­ãƒ«ãƒã‚§ã‚¤ãƒ³ã‚¹ã‚³ã‚¢
             int ss = ChainSkillScore[chain];
 
             sender = sb / 2 + ss / 2;
             score = sb + ss;
         }
         else {
-            // ƒpƒbƒN“Š‰º
+            // ãƒ‘ãƒƒã‚¯æŠ•ä¸‹
             success = field.insert(turnPack.rotated(cmd.rot()), cmd.xPos());
 
-            // ƒ`ƒFƒCƒ“
+            // ãƒã‚§ã‚¤ãƒ³
             tie(chain, success) = field.chain();
 
-            // ƒ`ƒFƒCƒ“ƒXƒRƒA
+            // ãƒã‚§ã‚¤ãƒ³ã‚¹ã‚³ã‚¢
             int ss = ChainScore[chain];
 
             sender = ss / 2;
@@ -52,12 +52,12 @@ namespace Game {
     }
 
 
-    // ƒRƒ}ƒ“ƒh‚ğ“K‰‚µ‚ÄCŸ‚Ìó‘Ô‚É‚·‚éD
-    // ‰ñ“]‘O‚ÌƒpƒbƒN‚ğ—^‚¦‚é
+    // ã‚³ãƒãƒ³ãƒ‰ã‚’é©å¿œã—ã¦ï¼Œæ¬¡ã®çŠ¶æ…‹ã«ã™ã‚‹ï¼
+    // å›è»¢å‰ã®ãƒ‘ãƒƒã‚¯ã‚’ä¸ãˆã‚‹
     // @return: success?
     bool Input::apply(Command cmdMe, Command cmdEn, const Pack& turnPack) {
 
-        // ‚¨×–‚ƒuƒƒbƒN‚Ì“Š‰ºˆ—
+        // ãŠé‚ªé­”ãƒ–ãƒ­ãƒƒã‚¯ã®æŠ•ä¸‹å‡¦ç†
         if (me.ojama >= 10) {
             me.field.stackOjama();
             me.ojama -= 10;
@@ -67,20 +67,20 @@ namespace Game {
             en.ojama -= 10;
         }
 
-        // Šl“¾ƒXƒRƒA
+        // ç²å¾—ã‚¹ã‚³ã‚¢
         int mescore = 0, enscore = 0;
-        // ƒ`ƒFƒCƒ“”
+        // ãƒã‚§ã‚¤ãƒ³æ•°
         int mechain = 0, enchain = 0;
-        // ‚¨×–‚ƒuƒƒbƒN‚ğ‘—‚éŒÂ”
+        // ãŠé‚ªé­”ãƒ–ãƒ­ãƒƒã‚¯ã‚’é€ã‚‹å€‹æ•°
         int mesender = 0, ensender = 0;
-        // ‹l‚Ü‚È‚©‚Á‚½
+        // è©°ã¾ãªã‹ã£ãŸ
         bool mesuccess = true, ensuccess = true;
 
-        // ƒtƒB[ƒ‹ƒh‚Ì•Ï‰»
+        // ãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã®å¤‰åŒ–
         tie(mescore, mechain, mesender, mesuccess) = me.apply(cmdMe, turnPack);
         tie(enscore, enchain, ensender, ensuccess) = en.apply(cmdEn, turnPack);
 
-        // ƒXƒLƒ‹ƒQ[ƒW‚ÌÁ–Õ
+        // ã‚¹ã‚­ãƒ«ã‚²ãƒ¼ã‚¸ã®æ¶ˆè€—
         if (cmdMe.skill()) {
             assert(me.skill >= 80);
             me.skill = 0;
@@ -90,7 +90,7 @@ namespace Game {
             en.skill = 0;
         }
 
-        // ƒXƒLƒ‹ƒQ[ƒW‚Ì•Ï‰»
+        // ã‚¹ã‚­ãƒ«ã‚²ãƒ¼ã‚¸ã®å¤‰åŒ–
         if (mechain >= 1) me.skill += 8;
         if (enchain >= 1) en.skill += 8;
         chlim(me.skill, 0, 100);
@@ -100,7 +100,7 @@ namespace Game {
         chlim(me.skill, 0, 100);
         chlim(en.skill, 0, 100);
 
-        // ‚¨×–‚‚Ì•Ï‰»
+        // ãŠé‚ªé­”ã®å¤‰åŒ–
         me.ojama += ensender;
         en.ojama += mesender;
         if (me.ojama > en.ojama)
@@ -110,7 +110,7 @@ namespace Game {
             en.ojama -= me.ojama,
             me.ojama = 0;
 
-        // ƒ^[ƒ“‘‰Á
+        // ã‚¿ãƒ¼ãƒ³å¢—åŠ 
         turn += 1;
 
         return mesuccess && ensuccess && turn < N;

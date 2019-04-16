@@ -43,7 +43,7 @@ namespace Game {
         constexpr int operator[](int i) const { return data_[i]; }
     };
 
-    // Ç»ÇÒÇ‡ÇÌÇ©ÇÁÇÒ
+    // „Å™„Çì„ÇÇ„Çè„Åã„Çâ„Çì
     constexpr ChainScoreT ChainScore;
     constexpr ChainSkillScoreT ChainSkillScore;
     constexpr BombScoreT BombScore;

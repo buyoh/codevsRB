@@ -1,6 +1,6 @@
 #pragma once
 
-// AI—p“r‚ÌGame‚ÌŠg’£
+// AIç”¨é€”ã®Gameã®æ‹¡å¼µ
 
 namespace Game {
 

@@ -5,7 +5,7 @@
 namespace Game {
 
 
-    // ’è”
+    // å®šæ•°
     // ===========================
 
 
@@ -15,18 +15,18 @@ namespace Game {
     const int W = 10; // field width
     // const int L = 2; // pack width
 
-    const int8_t Ojama = 11; // ‚¨×–‚ƒuƒƒbƒN‚ÌF
-    const int8_t None = 0; // ‹ó‹•‚ÌF
+    const int8_t Ojama = 11; // ãŠé‚ªé­”ãƒ–ãƒ­ãƒƒã‚¯ã®è‰²
+    const int8_t None = 0; // ç©ºè™šã®è‰²
 
 
 
-    // ’ŠÛ\‘¢‘Ì
+    // æŠ½è±¡æ§‹é€ ä½“
     // ===========================
 
 
 
-    // Field, Pack‚Ì’ŠÛƒNƒ‰ƒX
-    // ƒƒ‚ƒŠã‚É‚Íy²•ûŒü‚É®—ñ‚³‚ê‚Ä‚¢‚é“_‚ª’Êí‚ÆˆÙ‚È‚éD
+    // Field, Packã®æŠ½è±¡ã‚¯ãƒ©ã‚¹
+    // ãƒ¡ãƒ¢ãƒªä¸Šã«ã¯yè»¸æ–¹å‘ã«æ•´åˆ—ã•ã‚Œã¦ã„ã‚‹ç‚¹ãŒé€šå¸¸ã¨ç•°ãªã‚‹ï¼
     template<typename T, int Height, int Width>
     class Matrix {
 
@@ -43,7 +43,7 @@ namespace Game {
         inline Matrix(container_type&& d) : data_(move(d)) { data_.resize(Height*Width); }
         inline Matrix(initializer_list<T>&& d) : data_(move(d)) { data_.resize(Height*Width); }
 
-        // ”ÍˆÍ“à‚È‚çtrue
+        // ç¯„å›²å†…ãªã‚‰true
         constexpr bool safe(int y, int x) const noexcept { return 0 <= y && y < Height && 0 <= x && x < Width; }
 
         inline T& at(int y, int x) noexcept { return data_[y + x * Height]; }
@@ -53,7 +53,7 @@ namespace Game {
         inline T& operator()(int y, int x) noexcept { return data_[y + x * Height]; }
         inline T& operator()(P p) noexcept { return data_[p.y + p.x*Height]; }
 
-        // ”ÍˆÍ“à‚È‚ç’lC‚»‚¤‚Å‚È‚¢‚È‚ç-1
+        // ç¯„å›²å†…ãªã‚‰å€¤ï¼Œãã†ã§ãªã„ãªã‚‰-1
         inline T safeat(int y, int x) const noexcept { return safe(y,x) ? at(y, x) : -1; }
 
         inline void swap(Matrix& f) {
@@ -75,12 +75,12 @@ namespace Game {
 
 
 
-    // \‘¢‘Ì
+    // æ§‹é€ ä½“
     // ===========================
 
 
 
-    // y‚ªd—Í•ûŒüDField‚ÆˆÙ‚È‚é‚æ
+    // yãŒé‡åŠ›æ–¹å‘ï¼Fieldã¨ç•°ãªã‚‹ã‚ˆ
     class Pack : public Matrix<int8_t, 2, 2> {
 
     public:
@@ -90,7 +90,7 @@ namespace Game {
 
         //
 
-        // ‰E‰ñ“]‚ğcnt‰ñ”s‚Á‚½ƒpƒbƒN‚ğ•Ô‚·
+        // å³å›è»¢ã‚’cntå›æ•°è¡Œã£ãŸãƒ‘ãƒƒã‚¯ã‚’è¿”ã™
         inline Pack rotated(int cnt) const {
             const static int pat[][4] = { {0,1,2,3},{1,3,0,2},{3,2,1,0},{2,0,3,1} };
             vector<int8_t> d(4);
@@ -102,7 +102,7 @@ namespace Game {
             return Pack(move(d));
         }
 
-        // ‰E‰ñ“]‚ğcnt‰ñ”s‚¤
+        // å³å›è»¢ã‚’cntå›æ•°è¡Œã†
         inline void rotate(int cnt) {
             const static int pat[][3] = { {0, 1, 2},{1,3,3} ,{3,2, 2},{2, 2, 3} };
             cnt &= 3;
@@ -117,7 +117,7 @@ namespace Game {
     //
 
 
-    // -y‚ªd—Í•ûŒü
+    // -yãŒé‡åŠ›æ–¹å‘
     class Field : public Matrix<int8_t, H, W> {
         //
 
@@ -127,41 +127,41 @@ namespace Game {
         inline Field() :Matrix() { }
 
 
-        // ÅãˆÊ‚ÉPack‚ğ’u‚­
-        // @return İ’u‚Å‚«‚½ ? true : false
+        // æœ€ä¸Šä½ã«Packã‚’ç½®ã
+        // @return è¨­ç½®ã§ããŸ ? true : false
         bool insert(const Pack& pack, int x);
 
 
-        // ƒuƒƒbƒN‚ğ—‚Æ‚·
-        // @return Limit‚ğ’´‚¦‚È‚©‚Á‚½ ? true : false
+        // ãƒ–ãƒ­ãƒƒã‚¯ã‚’è½ã¨ã™
+        // @return Limitã‚’è¶…ãˆãªã‹ã£ãŸ ? true : false
         bool fall();
 
-        // ƒuƒƒbƒN‚ğÁ‹‚·‚é
+        // ãƒ–ãƒ­ãƒƒã‚¯ã‚’æ¶ˆå»ã™ã‚‹
         // @return num of destroyed
         int eliminate();
 
-        // fall‚Ì•”•ªÀ‘•
-        // @enabledCols true‚È—ñ‚ğ‘‚«Š·‚¦‚éDmutableD
-        // @return HLimit‚ğ’´‚¦‚½‚©H
+        // fallã®éƒ¨åˆ†å®Ÿè£…
+        // @enabledCols trueãªåˆ—ã‚’æ›¸ãæ›ãˆã‚‹ï¼mutableï¼
+        // @return HLimitã‚’è¶…ãˆãŸã‹ï¼Ÿ
         bool partialFall(array<bool, W>& enabledCols);
 
-        // Eliminate‚Ì•”•ªÀ‘•
-        // @enabledCols true‚È—ñ‚ğ‘‚«Š·‚¦‚éDmutableD
+        // Eliminateã®éƒ¨åˆ†å®Ÿè£…
+        // @enabledCols trueãªåˆ—ã‚’æ›¸ãæ›ãˆã‚‹ï¼mutableï¼
         // @return 
         int partialEliminate(array<bool, W>& enabledCols);
 
-        // 5‚ğ”š”­‚³‚¹‚é
+        // 5ã‚’çˆ†ç™ºã•ã›ã‚‹
         // @return num of destroyed
         int explode();
 
-        // ‚¨×–‚ƒuƒƒbƒN‚ğ1’i~‚ç‚¹‚é
-        // –‘O‚Éfall‚³‚ê‚Ä‚¢‚é‚±‚Æ
-        // overflow‚µ‚½CField‚Ìó‘Ô‚Í•s’è
+        // ãŠé‚ªé­”ãƒ–ãƒ­ãƒƒã‚¯ã‚’1æ®µé™ã‚‰ã›ã‚‹
+        // äº‹å‰ã«fallã•ã‚Œã¦ã„ã‚‹ã“ã¨
+        // overflowã—ãŸæ™‚ï¼ŒFieldã®çŠ¶æ…‹ã¯ä¸å®š
         // @return overflowed?
         bool stackOjama();
 
-        // fall->eliminate‚ğŒJ‚è•Ô‚·
-        // @return <count of chain, HLimit‚ğ’´‚¦‚½‚©H>
+        // fall->eliminateã‚’ç¹°ã‚Šè¿”ã™
+        // @return <count of chain, HLimitã‚’è¶…ãˆãŸã‹ï¼Ÿ>
         pair<int, bool> chain();
 
 
@@ -174,7 +174,7 @@ namespace Game {
     //
 
 
-    // ƒRƒ}ƒ“ƒh
+    // ã‚³ãƒãƒ³ãƒ‰
     class Command {
         // [0..3] xPos, [4..5] rot, [6] useSkill
         int8_t data_;
@@ -188,7 +188,7 @@ namespace Game {
         constexpr Command() : data_(0) {}
 
         constexpr int8_t xPos() const noexcept { return data_ & 15; }
-        // ‘½•ª‰E‰ñ“]
+        // å¤šåˆ†å³å›è»¢
         constexpr int8_t rot() const noexcept { return (data_ >> 4) & 3; }
         constexpr bool skill() const noexcept { return (data_ >> 6); }
 

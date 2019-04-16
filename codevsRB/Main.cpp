@@ -7,18 +7,18 @@
 void exit_help() {
     cout <<
         "usage: ./game [options]" "\n"
-        "ƒ‚[ƒh‘I‘ğ" "\n"
+        "ãƒ¢ãƒ¼ãƒ‰é¸æŠ" "\n"
         " --assertion : assertion." "\n"
-        "             : --stdin, --stdout, --stdout2 ‚ª•K—v." "\n"
-        " --self      : ƒ‰ƒ“ƒ_ƒ€‚È“ü—Í‚ğ“à•”‚Å¶¬CÀsD“üo—Í‚È‚µDƒxƒ“ƒ`ƒ}[ƒN—p" "\n"
-        "AIƒIƒvƒVƒ‡ƒ“" "\n"
-        " --shuffle   : 1ƒ^[ƒ“–Ú‚ğƒ‰ƒ“ƒ_ƒ€è‚É‚·‚é" "\n"
-        "ˆø”" "\n"
-        " --stdin   <filename> : assertion —p. stdin ‚Ì‘ã‚í‚è‚É filename ‚ğg—p." "\n"
-        " --stdout  <filename> : assertion —p. stdout ‚Ì‘ã‚í‚è‚É filename ‚ğg—p." "\n"
-        " --stdout2 <filename> : assertion —p. ‘ŠèƒvƒŒƒCƒ„[‚Ì•W€o—Í‚Ì filename ‚ğw’è." "\n"
-        "‚»‚Ì‘¼" "\n"
-        " --help (-h) : ‚±‚ê‚ğ•\¦" "\n";
+        "             : --stdin, --stdout, --stdout2 ãŒå¿…è¦." "\n"
+        " --self      : ãƒ©ãƒ³ãƒ€ãƒ ãªå…¥åŠ›ã‚’å†…éƒ¨ã§ç”Ÿæˆï¼Œå®Ÿè¡Œï¼å…¥å‡ºåŠ›ãªã—ï¼ãƒ™ãƒ³ãƒãƒãƒ¼ã‚¯ç”¨" "\n"
+        "AIã‚ªãƒ—ã‚·ãƒ§ãƒ³" "\n"
+        " --shuffle   : 1ã‚¿ãƒ¼ãƒ³ç›®ã‚’ãƒ©ãƒ³ãƒ€ãƒ æ‰‹ã«ã™ã‚‹" "\n"
+        "å¼•æ•°" "\n"
+        " --stdin   <filename> : assertion ç”¨. stdin ã®ä»£ã‚ã‚Šã« filename ã‚’ä½¿ç”¨." "\n"
+        " --stdout  <filename> : assertion ç”¨. stdout ã®ä»£ã‚ã‚Šã« filename ã‚’ä½¿ç”¨." "\n"
+        " --stdout2 <filename> : assertion ç”¨. ç›¸æ‰‹ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®æ¨™æº–å‡ºåŠ›ã® filename ã‚’æŒ‡å®š." "\n"
+        "ãã®ä»–" "\n"
+        " --help (-h) : ã“ã‚Œã‚’è¡¨ç¤º" "\n";
 
     cout << endl;
     exit(0);
@@ -92,14 +92,14 @@ int main(int argc, char** argv) {
     switch (mode)
     {
     case 0: {
-        // ’ÊíAIƒ‚[ƒh
+        // é€šå¸¸AIãƒ¢ãƒ¼ãƒ‰
         cin.tie(nullptr);
 
         execAI(cin, cout);
         break;
     }
     case 'a': {
-        // validateƒ‚[ƒh
+        // validateãƒ¢ãƒ¼ãƒ‰
         if (filename_cin == nullptr ||
             filename_cout1 == nullptr ||
             filename_cout2 == nullptr) exit_invalidOption();
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
         break;
     }
     case 's': {
-        // selfƒ‚[ƒh
+        // selfãƒ¢ãƒ¼ãƒ‰
 
         selfExecution();
         break;

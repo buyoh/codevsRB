@@ -4,11 +4,11 @@
 
 namespace Game {
 
-    // IO\‘¢‘Ì
+    // IOæ§‹é€ ä½“
     // ===========================
 
 
-    // ƒQ[ƒ€ŠJn‚Ì“ü—Í
+    // ã‚²ãƒ¼ãƒ é–‹å§‹æ™‚ã®å…¥åŠ›
     struct FirstInput {
         array<Pack, N> packs;
 
@@ -19,7 +19,7 @@ namespace Game {
     };
 
 
-    // ƒ^[ƒ“‚²‚Æ‚ÌƒvƒŒƒCƒ„[‚Ìó‘Ô
+    // ã‚¿ãƒ¼ãƒ³ã”ã¨ã®ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®çŠ¶æ…‹
     struct Player {
         int timeMsec;
         int ojama;
@@ -28,7 +28,7 @@ namespace Game {
 
         template<typename istream>
         void input(istream& is) {
-            int score; // TODO: d—l•ÏX‚µ‚½‚©‚ÈH
+            int score; // TODO: ä»•æ§˜å¤‰æ›´ã—ãŸã‹ãªï¼Ÿ
             is >> timeMsec >> ojama >> skill >> score;
             rrepeat(y, HLimit) {
                 repeat(x, W) {
@@ -45,18 +45,18 @@ namespace Game {
             assert(str == "END");
         }
 
-        // ƒRƒ}ƒ“ƒh‚ğ“K‰‚µ‚ÄCƒtƒB[ƒ‹ƒh‚ğ•Ï‰»‚³‚¹‚éD
-        // ƒXƒLƒ‹ƒQ[ƒW“™‚ÍˆêØ•Ï‰»‚³‚¹‚È‚¢
+        // ã‚³ãƒãƒ³ãƒ‰ã‚’é©å¿œã—ã¦ï¼Œãƒ•ã‚£ãƒ¼ãƒ«ãƒ‰ã‚’å¤‰åŒ–ã•ã›ã‚‹ï¼
+        // ã‚¹ã‚­ãƒ«ã‚²ãƒ¼ã‚¸ç­‰ã¯ä¸€åˆ‡å¤‰åŒ–ã•ã›ãªã„
         // @return: score, chain, sender, success
         tuple<int, int, int, bool> apply(Command, const Pack&);
     };
 
 
-    // ƒ^[ƒ“‚²‚Æ‚Ì“ü—Í
+    // ã‚¿ãƒ¼ãƒ³ã”ã¨ã®å…¥åŠ›
     struct Input {
         int turn;
-        Player me; // ‚í‚½‚­‚µ
-        Player en; // ‚ ‚¢‚Ä
+        Player me; // ã‚ãŸãã—
+        Player en; // ã‚ã„ã¦
 
         template<typename istream>
         void input(istream& is) {

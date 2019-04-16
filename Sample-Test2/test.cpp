@@ -107,8 +107,8 @@ TEST(FieldTest, ChainVertical) {
 
 TEST(FieldTest, ChainDiagonal1) {
     using namespace Game;
-    Pack pack2 = { 9,4,9,9 }; // pack2‚ªã
-    Pack pack1 = { 9,9,6,9 }; // æ‚É—‚¿‚é‚Ì‚Ípack1
+    Pack pack2 = { 9,4,9,9 }; // pack2ãŒä¸Š
+    Pack pack1 = { 9,9,6,9 }; // å…ˆã«è½ã¡ã‚‹ã®ã¯pack1
     Field field;
     EXPECT_TRUE(field.insert(pack1, 0));
     EXPECT_TRUE(field.fall());
@@ -139,7 +139,7 @@ TEST(FieldTest, ChainDiagonal1) {
 
 TEST(FieldTest, ChainDiagonal2) {
     using namespace Game;
-    Pack pack2 = { 9,9,9,4 }; // pack2‚ªã
+    Pack pack2 = { 9,9,9,4 }; // pack2ãŒä¸Š
     Pack pack1 = { 6,9,9,9 };
     Field field;
     EXPECT_TRUE(field.insert(pack1, 0));
