@@ -68,7 +68,6 @@
     <Object Include="..\codevsRB\x64\Debug\Exec.obj" />
     <Object Include="..\codevsRB\x64\Debug\Game.obj" />
     <Object Include="..\codevsRB\x64\Debug\Input.obj" />
-    <Object Include="..\codevsRB\x64\Debug\IntervalHeap.obj" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
