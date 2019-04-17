@@ -28,11 +28,11 @@ namespace Game {
     }
 
 
-    bool Field::partialFall(array<bool,W>& enabledCols) {
+    bool Field::partialFall(array<int, W>& enabledCols) {
         bool ok = true;
         repeat(x, W) {
-            if (!enabledCols[x]) continue;
-            enabledCols[x] = false; // 一旦書き換わらなかったことにする
+            if (enabledCols[x] <= 0) continue;
+            enabledCols[x] = 0; // 一旦書き換わらなかったことにする
             int i = 0;
             repeat(y, H) {
                 if (at(y, x) != None) {
@@ -42,7 +42,7 @@ namespace Game {
                     // iより上にyがあるならば，yの位置のブロックをiに持っていく
                     if (i < y)
                         std::swap(at(i, x), at(y, x)),
-                        enabledCols[x] = true; // 書き換わったのでtrueにする
+                        enabledCols[x] = y + 1; // 書き換わったのでtrueにする
                 }
             }
             ok &= (i < HLimit);
@@ -117,50 +117,58 @@ namespace Game {
 
 
     //
-    int Field::partialEliminate(array<bool, W>& enabledCols) {
-        static vector<pair<int8_t, int8_t>> flag; flag.clear();
+    int Field::partialEliminate(array<int, W>& enabledCols) {
+        static array<pair<int8_t, int8_t>, 32> erased;
+        int erasedPtr = 0;
         // 消されるブロックをマークする
         repeat(x, W - 1) {
             // 今見ているxまたはその右隣りがマークされていたら，書き換える可能性がある
-            if (!enabledCols[x] && !enabledCols[x + 1]) continue;
+            if (enabledCols[x] <= 0 && enabledCols[x + 1] <= 0) continue;
             repeat(y, H) {
+                if (enabledCols[x] < y && enabledCols[x + 1] < y) break;
                 auto a = at(y, x);
                 if (a == Ojama) continue;
+                bool b = false;
                 if (y > 0 && at(y - 1, x + 1) == 10 - a)
-                    flag.emplace_back(y, x),
-                    flag.emplace_back(y - 1, x + 1);
+                    b = true,
+                    erased[erasedPtr++] = make_pair(y - 1, x + 1);
                 if (at(y, x + 1) == 10 - a)
-                    flag.emplace_back(y, x),
-                    flag.emplace_back(y, x + 1);
+                    b = true,
+                    erased[erasedPtr++] = make_pair(y, x + 1);
                 if (y < H - 1 && at(y + 1, x + 1) == 10 - a)
-                    flag.emplace_back(y, x),
-                    flag.emplace_back(y + 1, x + 1);
+                    b = true,
+                    erased[erasedPtr++] = make_pair(y + 1, x + 1);
                 if (y < H - 1 && at(y + 1, x) == 10 - a)
-                    flag.emplace_back(y, x),
-                    flag.emplace_back(y + 1, x);
+                    b = true,
+                    erased[erasedPtr++] = make_pair(y + 1, x);
+                if (b)
+                    erased[erasedPtr++] = make_pair(y, x);
+
             }
         }
         // W-1 列
-        if (enabledCols[W - 1]){
+        if (enabledCols[W - 1] > 0){
             const int x = W - 1;
             repeat(y, H - 1) {
+                if (enabledCols[W - 1] < y) break;
                 auto a = at(y, x);
                 if (a == Ojama) continue;
                 if (at(y + 1, x) == 10 - a)
-                    flag.emplace_back(y, x),
-                    flag.emplace_back(y + 1, x);
+                    erased[erasedPtr++] = make_pair(y, x),
+                    erased[erasedPtr++] = make_pair(y + 1, x);
             }
         }
 
         // reset
-        enabledCols.fill(false);
+        enabledCols.fill(0);
 
         // マークした点を消去
         int cnt = 0;
-        for (auto p : flag) {
+        repeat(i, erasedPtr) {
+            auto p = erased[i];
             cnt += at(p.first, p.second) > 0;
             at(p.first, p.second) = 0;
-            enabledCols[p.second] = true;
+            chmax<int>(enabledCols[p.second], p.first + 1);
         }
 
         return cnt;
@@ -195,7 +203,7 @@ namespace Game {
     
     
     pair<int, bool> Field::chain() {
-        array<bool, W> flag; flag.fill(true);
+        array<int, W> flag; flag.fill(H);
         int cnt = 0;
         bool ok = true;
         //ok = partialFall(flag);

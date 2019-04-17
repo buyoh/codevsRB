@@ -46,12 +46,12 @@ namespace Game {
         // 範囲内ならtrue
         constexpr bool safe(int y, int x) const noexcept { return 0 <= y && y < Height && 0 <= x && x < Width; }
 
-        inline T& at(int y, int x) noexcept { return data_[y + x * Height]; }
-        inline T at(int y, int x) const noexcept { return data_[y + x * Height]; }
-        inline T operator()(int y, int x) const noexcept { return data_[y + x*Height]; }
-        inline T operator()(P p) const noexcept { return data_[p.y + p.x*Height]; }
-        inline T& operator()(int y, int x) noexcept { return data_[y + x * Height]; }
-        inline T& operator()(P p) noexcept { return data_[p.y + p.x*Height]; }
+        inline T& at(int y, int x) noexcept { return data_.data()[y + x * Height]; }
+        inline T at(int y, int x) const noexcept { return data_.data()[y + x * Height]; }
+        inline T operator()(int y, int x) const noexcept { return data_.data()[y + x*Height]; }
+        inline T operator()(P p) const noexcept { return data_.data()[p.y + p.x*Height]; }
+        inline T& operator()(int y, int x) noexcept { return data_.data()[y + x * Height]; }
+        inline T& operator()(P p) noexcept { return data_.data()[p.y + p.x*Height]; }
 
         // 範囲内なら値，そうでないなら-1
         inline T safeat(int y, int x) const noexcept { return safe(y,x) ? at(y, x) : -1; }
@@ -141,14 +141,14 @@ namespace Game {
         int eliminate();
 
         // fallの部分実装
-        // @enabledCols trueな列を書き換える．mutable．
+        // @enabledCols 正の数な列を書き換える．mutable．
         // @return HLimitを超えたか？
-        bool partialFall(array<bool, W>& enabledCols);
+        bool partialFall(array<int, W>& enabledCols);
 
         // Eliminateの部分実装
-        // @enabledCols trueな列を書き換える．mutable．
+        // @enabledCols 正の数な列を高々正の数の高さまで見て書き換える．mutable．
         // @return 
-        int partialEliminate(array<bool, W>& enabledCols);
+        int partialEliminate(array<int, W>& enabledCols);
 
         // 5を爆発させる
         // @return num of destroyed
