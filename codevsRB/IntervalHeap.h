@@ -22,7 +22,7 @@ class IntervalHeap {
     void fixup(int ptr) {
 
         if (ptr <= 0) return;
-        // ptr == 末尾 かつ 末尾を1要素しか持たない場合
+        // ptr == 末尾 かつ 末尾を1要素しか持た;ない場合
         if (one(ptr)) {
             int parent = (ptr - 1) / 2;
             if (data_[ptr].first < data_[parent].first)

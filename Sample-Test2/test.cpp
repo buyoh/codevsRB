@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "../codevsRB/Game.h"
+#include "../codevsRB/GameExt.h"
 //#include "../codevsRB/Exec.h"
 
 TEST(PackTest, PackRotation) {
@@ -225,5 +226,59 @@ TEST(FieldTest, Eliminate) {
             }
         }
 
+    }
+}
+
+
+TEST(DataStructTest, PField1) {
+    using namespace Game;
+    Pack pack = { 6,7,8,9 };
+    Field field1;
+    auto pf1 = PField::create(field1);
+    Field field2 = field1;
+    field2.insert(pack, 0);
+    auto pf2 = PField::append(pf1, field2);
+    Field field3 = field2;
+    field3.insert(pack, 1);
+    auto pf3 = PField::append(pf2, field3);
+    Field field3a = field2;
+    field3a.insert(pack, 2);
+    auto pf3a = PField::append(pf2, field3a);
+    {
+        auto f1 = pf1->generate();
+        auto f2 = pf2->generate();
+        auto f3 = pf3->generate();
+        auto f3a = pf3a->generate();
+        ASSERT_EQ(field1, f1);
+        ASSERT_EQ(field2, f2);
+        ASSERT_EQ(field3, f3);
+        ASSERT_EQ(field3a, f3a);
+    }
+}
+
+
+TEST(DataStructTest, PField2) {
+    using namespace Game;
+    Pack pack = { 6,7,8,9 };
+    Field field1;
+    auto pf1 = PField::create(field1);
+    Field field2 = field1;
+    field2.insert(pack, 0);
+    auto pf2 = PField::append_hint(pf1, field2, field1);
+    Field field3 = field2;
+    field3.insert(pack, 1);
+    auto pf3 = PField::append_hint(pf2, field3, field2);
+    Field field3a = field2;
+    field3a.insert(pack, 2);
+    auto pf3a = PField::append_hint(pf2, field3a, field2);
+    {
+        auto f1 = pf1->generate();
+        auto f2 = pf2->generate();
+        auto f3 = pf3->generate();
+        auto f3a = pf3a->generate();
+        ASSERT_EQ(field1, f1);
+        ASSERT_EQ(field2, f2);
+        ASSERT_EQ(field3, f3);
+        ASSERT_EQ(field3a, f3a);
     }
 }
