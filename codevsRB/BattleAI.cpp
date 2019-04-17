@@ -79,6 +79,22 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
     return best;
 }
 
+// ticket #14 1つの数字ブロックを落としてスコア計算？
+// 試験実装
+static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
+    int best = 0;
+    repeat(x, W) {
+        int y1 = 0;
+        while (y1 < H - 1 && field(y1, x) != None) ++y1;
+        for (int8_t v = 1; v <= 9; v += 1) {
+            Field f = field;
+            f(y1, x) = v;
+            chmax(best, ChainScore[f.chain().first]);
+        }
+    }
+    return best;
+}
+
 
 // 
 static vector<Command> solveSequence(const Input& input) {
