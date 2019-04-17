@@ -49,6 +49,9 @@ namespace Game {
         // スキルゲージ等は一切変化させない
         // @return: score, chain, sender, success
         tuple<int, int, int, bool> apply(Command, const Pack&);
+
+        // スキルが利用可能かどうか
+        inline bool skillable() const noexcept { return skill >= 80; }
     };
 
 

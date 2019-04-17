@@ -19,6 +19,7 @@ struct SearchState {
     vector<Command> commands;
     int score;
     int heuristic;
+    // int skill;
     
     inline bool operator<(const SearchState& ss) const noexcept {
         return heuristic < ss.heuristic;
@@ -85,11 +86,11 @@ static vector<Command> solveSequence(const Input& input) {
     cerr << "solve: " << input.turn << " ";
 
     // 先読み探索の深さ
-    const int MaxDepth = 14;
+    const int MaxDepth = 12;
     // ちょくだいさーち
     priority_queue<SearchState> stackedStates[MaxDepth + 1];
 
-    const int milestoneIdxBegin = input.turn + MaxDepth - 6;
+    const int milestoneIdxBegin = input.turn + MaxDepth - 3;
     const int milestoneIdxEnd = input.turn + MaxDepth;
 
     // 今のターンのコマンドを総当たり
@@ -97,12 +98,27 @@ static vector<Command> solveSequence(const Input& input) {
         auto pack = packs[input.turn].rotated(r);
         repeat(x, W - 1) {
             Command cmd(x, r);
-            SearchState ss{ input.me.field, vector<Command>{cmd}, 0 };
+            SearchState ss{ input.me.field, vector<Command>{cmd}, 0, 0 };
             ss.field.insert(pack, x);
             ss.score = ChainScore[ss.field.chain().first];
             ss.heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+            // ss.skill = input.me.skill + (ss.score > 0 ? 8 : 0);
             stackedStates[0].push(move(ss));
         }
+    }
+    // スキルが発動可能ならば入れる．
+    // スキルによって積み上がることは無いので，連鎖作成には使えない．よって1手目のみ考慮する．
+    if (input.me.skillable()) {
+        SearchState ss{ input.me.field, vector<Command>{Command::Skill}, 0, 0 };
+
+        int bombcnt = ss.field.explode();
+        int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
+        int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+        ss.score = skillscore;
+        ss.heuristic += heuristic;
+        // ss.skill = 0;
+
+        stackedStates[0].push(move(ss));
     }
 
     Tag<int, vector<Command>> best(-1, vector<Command>());
@@ -128,6 +144,7 @@ static vector<Command> solveSequence(const Input& input) {
                     ss.commands.push_back(Command(x, r));
                     // chmax(ss.score, cs);
                     ss.heuristic += heuristic;
+                    // ss.skill += (ss.score > 0 ? 8 : 0);
                     chmax(best, decltype(best)(chainscore, ss.commands));
 
                     stackedStates[depth + 1].push(move(ss));
@@ -169,7 +186,9 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
     }
 
     static vector<Command> pool;
-    if (pool.empty() || checkStackedOjama(input.me.field)) {
+    if (pool.empty() ||
+        checkStackedOjama(input.me.field) ||
+        (pool.back().skill() && !input.me.skillable())) {
         pool = solveSequence(input);
         reverse(ALL(pool));
     }
