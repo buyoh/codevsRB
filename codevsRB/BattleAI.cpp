@@ -200,7 +200,7 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
     if (input.turn == 0) {
         if (execOptions.shuffleFirstCommand) {
             random_device r;
-            return Command((uniform_int_distribution<int>(0, W - 1))(r), 0);
+            return Command((uniform_int_distribution<int>(0, W - 2))(r), (uniform_int_distribution<int>(0, 3))(r));
         }
     }
 
