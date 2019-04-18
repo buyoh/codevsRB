@@ -151,22 +151,56 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
             if (stackedStates[depth].empty()) continue;
             const SearchState& currss = stackedStates[depth].top();
 
-            repeat(r, 4) {
-                auto pack = packs[input.turn+depth+1].rotated(r);
+            if (execOptions.enableMultiThread) {
+                list<thread> threads;
+                mutex mtx;
                 repeat(x, W - 1) {
-                    SearchState ss = currss;
+                    threads.emplace_back([&](int x) {
+                        list<SearchState> ssl;
+                        Tag<int, vector<Command>> localBest( -1, vector<Command>() );
+                        repeat(r, 4) {
+                            auto pack = packs[input.turn + depth + 1].rotated(r);
+                            SearchState ss = currss;
 
-                    if (!ss.field.insert(pack, x)) continue;
-                    int chainscore = ChainScore[ss.field.chain().first];
-                    int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-                    ss.commands.push_back(Command(x, r));
-                    // chmax(ss.score, cs);
-                    ss.heuristic += heuristic;
-                    // ss.skill += (ss.score > 0 ? 8 : 0);
-                    chmax(best, decltype(best)(chainscore, ss.commands));
-                    if (stackedOjama > depth + 1) ss.field.stackOjama();
+                            if (!ss.field.insert(pack, x)) continue;
+                            int chainscore = ChainScore[ss.field.chain().first];
+                            int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+                            ss.commands.push_back(Command(x, r));
+                            // chmax(ss.score, cs);
+                            ss.heuristic += heuristic;
+                            // ss.skill += (ss.score > 0 ? 8 : 0);
+                            chmax(localBest, decltype(localBest)(chainscore, ss.commands));
+                            if (stackedOjama > depth + 1) ss.field.stackOjama();
+                            ssl.push_back(move(ss));
+                        }
+                        {
+                            lock_guard lock(mtx);
+                            for (auto& ss : ssl)
+                                stackedStates[depth + 1].push(move(ss));
+                            chmax(best, localBest);
+                        }
+                        }, x);
+                }
+                for (auto& t : threads) t.join();
+            }
+            else {
+                repeat(r, 4) {
+                    auto pack = packs[input.turn + depth + 1].rotated(r);
+                    repeat(x, W - 1) {
+                        SearchState ss = currss;
 
-                    stackedStates[depth + 1].push(move(ss));
+                        if (!ss.field.insert(pack, x)) continue;
+                        int chainscore = ChainScore[ss.field.chain().first];
+                        int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+                        ss.commands.push_back(Command(x, r));
+                        // chmax(ss.score, cs);
+                        ss.heuristic += heuristic;
+                        // ss.skill += (ss.score > 0 ? 8 : 0);
+                        chmax(best, decltype(best)(chainscore, ss.commands));
+                        if (stackedOjama > depth + 1) ss.field.stackOjama();
+
+                        stackedStates[depth + 1].push(move(ss));
+                    }
                 }
             }
 

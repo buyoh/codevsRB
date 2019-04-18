@@ -12,7 +12,8 @@ void exit_help() {
         "             : --stdin, --stdout, --stdout2 が必要." "\n"
         " --self      : ランダムな入力を内部で生成，実行．入出力なし．ベンチマーク用" "\n"
         "AIオプション" "\n"
-        " --shuffle   : 1ターン目をランダム手にする" "\n"
+        " -s --shuffle     : 1ターン目をランダム手にする" "\n"
+        " -m --multithread : マルチスレッド実行" "\n"
         "引数" "\n"
         " --stdin   <filename> : assertion 用. stdin の代わりに filename を使用." "\n"
         " --stdout  <filename> : assertion 用. stdout の代わりに filename を使用." "\n"
@@ -77,12 +78,21 @@ int main(int argc, char** argv) {
             else if (strcmp(argv[p], "--shuffle") == 0) {
                 execOptions.shuffleFirstCommand = true;
             }
+            else if (strcmp(argv[p], "--multithread") == 0) {
+                execOptions.enableMultiThread = true;
+            }
         }
         else if (argv[p][0] == '-') {
             // short flag
 
             if (argv[p][1] == 'h') {
                 exit_help();
+            }
+            if (argv[p][1] == 's') {
+                execOptions.shuffleFirstCommand = true;
+            }
+            if (argv[p][1] == 'm') {
+                execOptions.enableMultiThread = true;
             }
 
         }

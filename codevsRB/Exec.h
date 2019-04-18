@@ -1,7 +1,8 @@
 #pragma once
 
 struct ExecOptions {
-    bool shuffleFirstCommand;
+    bool shuffleFirstCommand = false;
+    bool enableMultiThread = false;
 };
 extern ExecOptions execOptions;
 
