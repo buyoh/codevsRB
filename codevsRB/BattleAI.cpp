@@ -151,35 +151,49 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
             if (stackedStates[depth].empty()) continue;
             const SearchState& currss = stackedStates[depth].top();
 
-            if (execOptions.enableMultiThread) {
+            if (true) {
                 list<thread> threads;
                 mutex mtx;
                 repeat(x, W - 1) {
-                    threads.emplace_back([&](int x) {
-                        list<SearchState> ssl;
-                        Tag<int, vector<Command>> localBest( -1, vector<Command>() );
+                    threads.emplace_back([&](int xPos, array<SearchState, 4> ssl, bool ojamable) {
+                        // memo: スレッドセーフであること！
+                        // <score, cmd.r>
+                        pair<int, int> localBest( -1, 0 );
+                        bool ok[] = { true, true, true, true };
                         repeat(r, 4) {
                             auto pack = packs[input.turn + depth + 1].rotated(r);
-                            SearchState ss = currss;
+                            SearchState& ss = ssl[r];
 
-                            if (!ss.field.insert(pack, x)) continue;
+                            if (!ss.field.insert(pack, xPos)) { ok[r] = false; continue; }
                             int chainscore = ChainScore[ss.field.chain().first];
+                            if (!ss.field.fall()) { ok[r] = false; continue; } // あふれた？
                             int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-                            ss.commands.push_back(Command(x, r));
+
+                            // ss.commands.push_back(Command(x, r)); // NG. 排他ロックのスコープでpushする
+
                             // chmax(ss.score, cs);
                             ss.heuristic += heuristic;
                             // ss.skill += (ss.score > 0 ? 8 : 0);
-                            chmax(localBest, decltype(localBest)(chainscore, ss.commands));
-                            if (stackedOjama > depth + 1) ss.field.stackOjama();
-                            ssl.push_back(move(ss));
+
+                            chmax(localBest, decltype(localBest)(chainscore, r));
+                            if (ojamable) ss.field.stackOjama();
                         }
                         {
-                            lock_guard lock(mtx);
-                            for (auto& ss : ssl)
-                                stackedStates[depth + 1].push(move(ss));
-                            chmax(best, localBest);
+                            lock_guard<mutex> lock(mtx);
+
+                            repeat(r, 4) {
+                                if (!ok[r]) continue;
+
+                                ssl[r].commands.push_back(Command(xPos, r));
+
+                                if (r == localBest.second && localBest.first > 0)
+                                    chmax(best, Tag<int, vector<Command>>(localBest.first, ssl[localBest.second].commands));
+
+                                stackedStates[depth + 1].push(move(ssl[r]));
+                            }
+                            
                         }
-                        }, x);
+                        }, x, array<SearchState, 4>{currss, currss, currss, currss}, stackedOjama > depth + 1);
                 }
                 for (auto& t : threads) t.join();
             }
@@ -191,6 +205,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 
                         if (!ss.field.insert(pack, x)) continue;
                         int chainscore = ChainScore[ss.field.chain().first];
+                        if (!ss.field.fall()) continue; // あふれた？
                         int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
                         ss.commands.push_back(Command(x, r));
                         // chmax(ss.score, cs);
@@ -251,6 +266,8 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
         pool.pop_back();
         return c;
     }
+
+    cerr << "No commands" << endl;
 
     return Command::Skill;
 }

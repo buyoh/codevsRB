@@ -84,7 +84,7 @@ namespace Game {
 
 
     int Field::eliminate() {
-        static vector<pair<int8_t, int8_t>> flag; flag.clear();
+        vector<pair<int8_t, int8_t>> flag; flag.clear();
         // 消されるブロックをマークする
         repeat(x, W) {
             repeat(y, H) {
@@ -118,7 +118,7 @@ namespace Game {
 
     //
     int Field::partialEliminate(array<int, W>& enabledCols) {
-        static array<pair<int8_t, int8_t>, 32> erased;
+        array<pair<int8_t, int8_t>, 32> erased;
         int erasedPtr = 0;
         // 消されるブロックをマークする
         repeat(x, W - 1) {
