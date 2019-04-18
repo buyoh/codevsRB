@@ -97,7 +97,7 @@ static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBe
 
 
 // 
-static vector<Command> solveSequence(const Input& input) {
+static vector<Command> solveSequence(const Input& input, const int stackedOjama) {
 
     cerr << "solve: " << input.turn << " ";
 
@@ -115,10 +115,12 @@ static vector<Command> solveSequence(const Input& input) {
         repeat(x, W - 1) {
             Command cmd(x, r);
             SearchState ss{ input.me.field, vector<Command>{cmd}, 0, 0 };
-            ss.field.insert(pack, x);
+            if (!ss.field.insert(pack, x)) continue;
             ss.score = ChainScore[ss.field.chain().first];
             ss.heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
             // ss.skill = input.me.skill + (ss.score > 0 ? 8 : 0);
+            if (stackedOjama > 0) ss.field.stackOjama();
+
             stackedStates[0].push(move(ss));
         }
     }
@@ -133,6 +135,7 @@ static vector<Command> solveSequence(const Input& input) {
         ss.score = skillscore;
         ss.heuristic += heuristic;
         // ss.skill = 0;
+        if (stackedOjama > 0) ss.field.stackOjama();
 
         stackedStates[0].push(move(ss));
     }
@@ -153,15 +156,15 @@ static vector<Command> solveSequence(const Input& input) {
                 repeat(x, W - 1) {
                     SearchState ss = currss;
 
-                    ss.field.insert(pack, x);
+                    if (!ss.field.insert(pack, x)) continue;
                     int chainscore = ChainScore[ss.field.chain().first];
-                    if (!ss.field.fall()) continue;
                     int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
                     ss.commands.push_back(Command(x, r));
                     // chmax(ss.score, cs);
                     ss.heuristic += heuristic;
                     // ss.skill += (ss.score > 0 ? 8 : 0);
                     chmax(best, decltype(best)(chainscore, ss.commands));
+                    if (stackedOjama > depth + 1) ss.field.stackOjama();
 
                     stackedStates[depth + 1].push(move(ss));
                 }
@@ -202,10 +205,11 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
     }
 
     static vector<Command> pool;
+    static int stackedOjama = 0;
     if (pool.empty() ||
-        checkStackedOjama(input.me.field) ||
+        (checkStackedOjama(input.me.field) && stackedOjama-- <= 0) ||
         (pool.back().skill() && !input.me.skillable())) {
-        pool = solveSequence(input);
+        pool = solveSequence(input, stackedOjama = input.me.ojama/10);
         reverse(ALL(pool));
     }
     if (!pool.empty()) {
