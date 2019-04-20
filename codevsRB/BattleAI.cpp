@@ -45,6 +45,7 @@ static decltype(FirstInput::packs) packs;
 
 // ojamaが積もったか？
 // 予めfallされていること
+// deprecated
 static bool checkStackedOjama(const Field& field) {
     repeat(x, W){
         bool lasto = false; // 直前がojamaだった
@@ -296,7 +297,7 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
     static vector<Command> pool;
     static int stackedOjama = 0;
     if (pool.empty() ||
-        (checkStackedOjama(input.me.field) && stackedOjama-- <= 0) ||
+        (input.me.ojama >= 10 && stackedOjama-- <= 0) ||
         (pool.back().skill() && !input.me.skillable())) {
         pool = solveSequence(input, stackedOjama = input.me.ojama/10);
         reverse(ALL(pool));
