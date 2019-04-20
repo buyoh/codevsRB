@@ -69,9 +69,9 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
     iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd){
         repeat(r, 4) {
             auto pack = packs[mpi].rotated(r);
-            repeat(i, W / 2 - 1) {
+            repeat(i, W - 1) {
                 Field f = field;
-                f.insert(pack, i*2);
+                f.insert(pack, i);
                 chmax(best, ChainScore[f.chain().first]);
             }
         }
@@ -153,7 +153,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     // 時間が許す限り探索する
     int loopcount = 0;
     static int totaloppcount = 0;
-    for (auto timer = TIME; MILLISEC(TIME - timer) < 4000; ) {
+    for (auto timer = TIME; MILLISEC(TIME - timer) < 7500; ) {
 
         repeat(depth, MaxDepth) {
             if (stackedStates[depth].empty()) continue;
@@ -191,9 +191,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                             if (!ss.field.fall()) { ok[r] = false; continue; } // あふれた？
                             int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 
-                            // ss.commands.push_back(Command(x, r)); // NG. 排他ロックのスコープでpushする
+                            // ss.commands.push_back(Command(x, r)); // NG. スレッドセーフでない.排他ロックのスコープでpushする
 
-                            // chmax(ss.score, cs);
                             ss.heuristic += heuristic;
                             // ss.skill += (ss.score > 0 ? 8 : 0);
 
