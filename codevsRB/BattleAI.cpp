@@ -109,38 +109,46 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     const int milestoneIdxBegin = input.turn + MaxDepth - 3;
     const int milestoneIdxEnd = input.turn + MaxDepth;
 
-    // 今のターンのコマンドを総当たり
-    repeat(r, 4) {
-        auto pack = packs[input.turn].rotated(r);
-        repeat(x, W - 1) {
-            Command cmd(x, r);
-            SearchState ss{ input.me.field, vector<Command>{cmd}, 0, 0 };
-            if (!ss.field.insert(pack, x)) continue;
-            ss.score = ChainScore[ss.field.chain().first];
-            ss.heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-            // ss.skill = input.me.skill + (ss.score > 0 ? 8 : 0);
-            if (stackedOjama > 0) ss.field.stackOjama();
+	Tag<int, vector<Command>> best(-1, vector<Command>());
 
-            stackedStates[0].push(move(ss));
-        }
-    }
-    // スキルが発動可能ならば入れる．
-    // スキルによって積み上がることは無いので，連鎖作成には使えない．よって1手目のみ考慮する．
-    if (input.me.skillable()) {
-        SearchState ss{ input.me.field, vector<Command>{Command::Skill}, 0, 0 };
+	// firstTurn
+	{
+		Field field = input.me.field;
+		if (stackedOjama > 0) field.stackOjama();
 
-        int bombcnt = ss.field.explode();
-        int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
-        int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-        ss.score = skillscore;
-        ss.heuristic += heuristic;
-        // ss.skill = 0;
-        if (stackedOjama > 0) ss.field.stackOjama();
+		// 今のターンのコマンドを総当たり
+		repeat(r, 4) {
+			auto pack = packs[input.turn].rotated(r);
+			repeat(x, W - 1) {
+				Command cmd(x, r);
+				SearchState ss{ field, vector<Command>{cmd}, 0, 0 };
+				if (!ss.field.insert(pack, x)) continue;
+				int score = ChainScore[ss.field.chain().first];
+				int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+				ss.score = score;
+				ss.heuristic = heuristic;
 
-        stackedStates[0].push(move(ss));
-    }
+				chmax(best, decltype(best)(score, ss.commands));
 
-    Tag<int, vector<Command>> best(-1, vector<Command>());
+				stackedStates[0].push(move(ss));
+			}
+		}
+		// スキルが発動可能ならば入れる．
+		// スキルによって積み上がることは無いので，連鎖作成には使えない．よって1手目のみ考慮する．
+		if (input.me.skillable()) {
+			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0 };
+
+			int bombcnt = ss.field.explode();
+			int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
+			int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+			ss.score = skillscore;
+			ss.heuristic += heuristic;
+
+			chmax(best, decltype(best)(skillscore, ss.commands));
+
+			stackedStates[0].push(move(ss));
+		}
+	}
 
     // 時間が許す限り探索する
     int loopcount = 0;
@@ -151,20 +159,34 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
             if (stackedStates[depth].empty()) continue;
             const SearchState& currss = stackedStates[depth].top();
 
-            if (true) {
+            if (execOptions.enableMultiThread) {
+				// マルチスレッド実行
                 list<thread> threads;
                 mutex mtx;
+
+				auto copied_currss = currss;
+
+				if (stackedOjama > depth + 1) copied_currss.field.stackOjama();
+
+
+				array<Pack, 4> rotatedPack = {
+					packs[input.turn + depth + 1],
+					packs[input.turn + depth + 1].rotated(1),
+					packs[input.turn + depth + 1].rotated(2),
+					packs[input.turn + depth + 1].rotated(3)
+				};
+
                 repeat(x, W - 1) {
-                    threads.emplace_back([&](int xPos, array<SearchState, 4> ssl, bool ojamable) {
+
+					threads.emplace_back([&](int xPos, array<SearchState, 4> ssl) {
                         // memo: スレッドセーフであること！
                         // <score, cmd.r>
                         pair<int, int> localBest( -1, 0 );
                         bool ok[] = { true, true, true, true };
                         repeat(r, 4) {
-                            auto pack = packs[input.turn + depth + 1].rotated(r);
                             SearchState& ss = ssl[r];
 
-                            if (!ss.field.insert(pack, xPos)) { ok[r] = false; continue; }
+                            if (!ss.field.insert(rotatedPack[r], xPos)) { ok[r] = false; continue; }
                             int chainscore = ChainScore[ss.field.chain().first];
                             if (!ss.field.fall()) { ok[r] = false; continue; } // あふれた？
                             int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
@@ -176,9 +198,9 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                             // ss.skill += (ss.score > 0 ? 8 : 0);
 
                             chmax(localBest, decltype(localBest)(chainscore, r));
-                            if (ojamable) ss.field.stackOjama();
                         }
                         {
+							// ここのブロックは排他ロックするので、スレッドセーフでなくても良い
                             lock_guard<mutex> lock(mtx);
 
                             repeat(r, 4) {
@@ -193,15 +215,18 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                             }
                             
                         }
-                        }, x, array<SearchState, 4>{currss, currss, currss, currss}, stackedOjama > depth + 1);
+                        }, x, array<SearchState, 4>{copied_currss, copied_currss, copied_currss, copied_currss});
                 }
                 for (auto& t : threads) t.join();
             }
             else {
+				// マルチスレッドでない
+
                 repeat(r, 4) {
                     auto pack = packs[input.turn + depth + 1].rotated(r);
                     repeat(x, W - 1) {
                         SearchState ss = currss;
+						if (stackedOjama > depth + 1) ss.field.stackOjama();
 
                         if (!ss.field.insert(pack, x)) continue;
                         int chainscore = ChainScore[ss.field.chain().first];
@@ -212,7 +237,6 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                         ss.heuristic += heuristic;
                         // ss.skill += (ss.score > 0 ? 8 : 0);
                         chmax(best, decltype(best)(chainscore, ss.commands));
-                        if (stackedOjama > depth + 1) ss.field.stackOjama();
 
                         stackedStates[depth + 1].push(move(ss));
                     }
@@ -229,6 +253,23 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     repeat(depth, MaxDepth + 1) {
         clog << stackedStates[depth].size() << endl;
     }
+
+
+	if (execOptions.checkOutputCommands) {
+		Player me = input.me;
+		int t = 0;
+		int bestscore = 0;
+		bool fail = false;
+		for (auto cmd : best.second) {
+			auto res = me.apply(cmd, packs[input.turn + t]);
+			chmax(bestscore, get<0>(res));
+			fail |= get<3>(res);
+			++t;
+		}
+		if (!fail && bestscore < best.first) {
+			abort();
+		}
+	}
 
 
     return best.second;

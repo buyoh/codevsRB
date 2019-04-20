@@ -24,11 +24,11 @@ namespace Game {
         int timeMsec;
         int ojama;
         int skill;
+		int score;
         Field field;
 
         template<typename istream>
         void input(istream& is) {
-            int score; // TODO: 仕様変更したかな？
             is >> timeMsec >> ojama >> skill >> score;
             rrepeat(y, HLimit) {
                 repeat(x, W) {

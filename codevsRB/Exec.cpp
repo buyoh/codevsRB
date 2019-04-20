@@ -127,8 +127,10 @@ void validateSimulator(istream& fin, istream& fme, istream& fen) {
             }
             assert(input.me.ojama == localinput.me.ojama);
             assert(input.me.skill == localinput.me.skill);
+			assert(input.me.score == localinput.me.score);
             assert(input.en.ojama == localinput.en.ojama);
             assert(input.en.skill == localinput.en.skill);
+			assert(input.en.score == localinput.en.score);
         }
         else {
             first = false;
@@ -161,7 +163,7 @@ void selfExecution() {
 
     Game::Input input; Generator::setDefaultInput(input);
 
-    repeat(turn, 80) {
+    repeat(turn, 150) {
         auto cmd = ai.loop(input, firstinput.packs[turn]);
         input.apply(cmd, Game::Command(0, 0), firstinput.packs[turn]);
 

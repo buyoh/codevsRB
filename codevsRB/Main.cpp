@@ -14,6 +14,7 @@ void exit_help() {
         "AIオプション" "\n"
         " -s --shuffle     : 1ターン目をランダム手にする" "\n"
         " -m --multithread : マルチスレッド実行" "\n"
+        " --check          : 出力するコマンドの検証を行う．AIデバッグ用" "\n"
         "引数" "\n"
         " --stdin   <filename> : assertion 用. stdin の代わりに filename を使用." "\n"
         " --stdout  <filename> : assertion 用. stdout の代わりに filename を使用." "\n"
@@ -81,6 +82,9 @@ int main(int argc, char** argv) {
             else if (strcmp(argv[p], "--multithread") == 0) {
                 execOptions.enableMultiThread = true;
             }
+			else if (strcmp(argv[p], "--check") == 0) {
+				execOptions.checkOutputCommands = true;
+			}
         }
         else if (argv[p][0] == '-') {
             // short flag
@@ -117,10 +121,18 @@ int main(int argc, char** argv) {
         ifstream fo1(filename_cout1);
         ifstream fo2(filename_cout2);
 
-        if (fi.fail() || fo1.fail() || fo2.fail()) {
-            cout << "error: not found" << endl;
+        if (fi.fail()) {
+            cout << "error: stdin not found" << endl;
             abort();
         }
+		if (fo1.fail()) {
+			cout << "error: stdout not found" << endl;
+			abort();
+		}
+		if (fo2.fail()) {
+			cout << "error: stdout2 not found" << endl;
+			abort();
+		}
 
         validateSimulator(fi, fo1, fo2);
         break;

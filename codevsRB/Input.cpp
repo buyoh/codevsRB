@@ -113,6 +113,10 @@ namespace Game {
         // ターン増加
         turn += 1;
 
+		// スコア加算
+		me.score += mescore;
+		en.score += enscore;
+
         return mesuccess && ensuccess && turn < N;
     }
 }
