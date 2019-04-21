@@ -136,6 +136,12 @@ namespace Game {
         // @return Limitを超えなかった ? true : false
         bool fall();
 
+		// @return Limitを超えた ? true : false
+		inline bool isOverFlow() const {
+			repeat(x, W) iterate(y, HLimit, H) if (at(y, x) != None) return true;
+			return false;
+		}
+
         // ブロックを消去する
         // @return num of destroyed
         int eliminate();
@@ -157,8 +163,8 @@ namespace Game {
         // お邪魔ブロックを1段降らせる
         // 事前にfallされていること
         // overflowした時，Fieldの状態は不定
-        // @return overflowed?
-        bool stackOjama();
+        // @return
+        void stackOjama();
 
         // fall->eliminateを繰り返す
         // @return <count of chain, HLimitを超えたか？>

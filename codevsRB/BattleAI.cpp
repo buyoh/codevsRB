@@ -123,8 +123,10 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 			repeat(x, W - 1) {
 				Command cmd(x, r);
 				SearchState ss{ field, vector<Command>{cmd}, 0, 0 };
-				if (!ss.field.insert(pack, x)) continue;
+			
+				ss.field.insert(pack, x); // 置く
 				int score = ChainScore[ss.field.chain().first];
+				if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
 				int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 				ss.score = score;
 				ss.heuristic = heuristic;
@@ -187,9 +189,9 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                         repeat(r, 4) {
                             SearchState& ss = ssl[r];
 
-                            if (!ss.field.insert(rotatedPack[r], xPos)) { ok[r] = false; continue; }
+                            ss.field.insert(rotatedPack[r], xPos);
                             int chainscore = ChainScore[ss.field.chain().first];
-                            if (!ss.field.fall()) { ok[r] = false; continue; } // あふれた？
+                            if (ss.field.isOverFlow()) { ok[r] = false; continue; } // オーバーフローしたら無効
                             int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 
                             // ss.commands.push_back(Command(x, r)); // NG. スレッドセーフでない.排他ロックのスコープでpushする
@@ -228,9 +230,9 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
                         SearchState ss = currss;
 						if (stackedOjama > depth + 1) ss.field.stackOjama();
 
-                        if (!ss.field.insert(pack, x)) continue;
+						ss.field.insert(pack, x);
                         int chainscore = ChainScore[ss.field.chain().first];
-                        if (!ss.field.fall()) continue; // あふれた？
+						if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
                         int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
                         ss.commands.push_back(Command(x, r));
                         // chmax(ss.score, cs);
@@ -251,8 +253,13 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     clog << "loop:" << loopcount << ", best:" << best.first << "\n";
     clog << "totaloop: " << (totaloppcount += loopcount) << "\n";
     repeat(depth, MaxDepth + 1) {
-        clog << stackedStates[depth].size() << endl;
+        clog << stackedStates[depth].size() << "\n";
     }
+
+	for (auto cmd : best.second) {
+		clog << cmd << "\n";
+	}
+	clog << "cmd.size = " << best.second.size() << endl;
 
 
 	if (execOptions.checkOutputCommands) {
@@ -267,6 +274,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 			++t;
 		}
 		if (!fail && bestscore < best.first) {
+			cerr << "Wrong commands" << endl;
 			abort();
 		}
 	}

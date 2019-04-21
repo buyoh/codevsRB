@@ -22,7 +22,8 @@ namespace Game {
                     if (i < y) std::swap(at(i, x), at(y, x));
                 }
             }
-            ok &= (i < HLimit);
+			// iは境界を指しているが、重力側、空側のどちらかは不明なので、(at(i, x) == None)で調べる
+            ok &= (i - (at(i, x) == None) < HLimit);
         }
         return ok;
     }
@@ -216,17 +217,15 @@ namespace Game {
     }
 
 
-    bool Field::stackOjama() {
+    void Field::stackOjama() {
         repeat(x, W) {
             repeat(y, H) {
                 if (at(y, x) == 0) {
-                    if (y >= HLimit) return true;
                     at(y, x) = Ojama;
                     break;
                 }
             }
         }
-        return false;
     }
 
 }

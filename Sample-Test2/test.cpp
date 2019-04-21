@@ -172,19 +172,21 @@ TEST(FieldTest, ChainDiagonal2) {
 
 TEST(FieldTest, OverflowField) {
     using namespace Game;
-    Pack pack = { 9,9,9,9 };
+    Pack pack = { 0,9,9,0 };
     Field field;
     int height = 0;
     for (int lop = 0; lop < H; ++lop) {
 
         EXPECT_TRUE(field.insert(pack, 0));
         bool ok = field.fall();
-        height += 2;
-        if (height >= HLimit) {
-            EXPECT_FALSE(ok) << "fall will fail";
+		bool ok2 = !field.isOverFlow();
+		EXPECT_EQ(ok, ok2);
+        height += 1;
+        if (height > HLimit) {
+            EXPECT_FALSE(ok) << "fall will fail H=" << height;
             break;
         }
-        EXPECT_TRUE(ok) << "fall will success";
+        EXPECT_TRUE(ok) << "fall will success H=" << height;
     }
 }
 
