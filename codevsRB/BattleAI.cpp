@@ -5,6 +5,7 @@
 #include "AI.h"
 #include "Time.h"
 #include "Score.h"
+#include "PriorityQueue.h"
 
 #include "Exec.h"
 
@@ -105,7 +106,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     // 先読み探索の深さ
     const int MaxDepth = 12;
     // ちょくだいさーち
-    priority_queue<SearchState> stackedStates[MaxDepth + 1];
+	static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
+	for (auto& ss : stackedStates) ss.clear(), ss.reserve(10000);
 
     const int milestoneIdxBegin = input.turn + MaxDepth - 3;
     const int milestoneIdxEnd = input.turn + MaxDepth;
@@ -141,7 +143,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 		if (input.me.skillable()) {
 			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0 };
 
-			int bombcnt = ss.field.explode();
+			int bombcnt = ss.field.explode(); ss.field.fall();
 			int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 			int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 			ss.score = skillscore;

@@ -208,7 +208,7 @@ namespace Game {
         int cnt = 0;
         bool ok = true;
         //ok = partialFall(flag);
-        ok = fall();
+        // ok = fall();
         while (partialEliminate(flag) > 0) {
             ++cnt;
             ok = partialFall(flag);

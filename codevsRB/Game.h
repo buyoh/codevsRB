@@ -136,6 +136,14 @@ namespace Game {
         // @return Limitを超えなかった ? true : false
         bool fall();
 
+		// 最も高く積もっている場所の積み上がっている個数を数える
+		inline int getHighest() const {
+			int h = 0;
+			repeat(x, W) repeat(y, H)
+				if (at(y, x) == None) { chmax(h, y); break; }
+			return h;
+		}
+
 		// @return Limitを超えた ? true : false
 		inline bool isOverFlow() const {
 			repeat(x, W) iterate(y, HLimit, H) if (at(y, x) != None) return true;
@@ -167,6 +175,7 @@ namespace Game {
         void stackOjama();
 
         // fall->eliminateを繰り返す
+        // 事前にfallされていること
         // @return <count of chain, HLimitを超えたか？>
         pair<int, bool> chain();
 

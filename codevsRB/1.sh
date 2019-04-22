@@ -1,4 +1,4 @@
-COPT=-O3 -mavx
+COPT=-O3 -march=native
 
 g++ $COPT -c BattleAI.cpp -o BattleAI.o
 g++ $COPT -c CaseGenerator.cpp -o CaseGenerator.o

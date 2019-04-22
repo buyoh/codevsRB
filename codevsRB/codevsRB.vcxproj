@@ -318,6 +318,7 @@
     <ClInclude Include="IntervalHeap.h" />
     <ClInclude Include="Macro.h" />
     <ClInclude Include="Exec.h" />
+    <ClInclude Include="PriorityQueue.h" />
     <ClInclude Include="Score.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Util.h" />
