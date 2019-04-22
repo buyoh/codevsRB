@@ -46,12 +46,12 @@ namespace Game {
         // 範囲内ならtrue
         constexpr bool safe(int y, int x) const noexcept { return 0 <= y && y < Height && 0 <= x && x < Width; }
 
-        inline T& at(int y, int x) noexcept { return data_.data()[y + x * Height]; }
-        inline T at(int y, int x) const noexcept { return data_.data()[y + x * Height]; }
-        inline T operator()(int y, int x) const noexcept { return data_.data()[y + x*Height]; }
-        inline T operator()(P p) const noexcept { return data_.data()[p.y + p.x*Height]; }
-        inline T& operator()(int y, int x) noexcept { return data_.data()[y + x * Height]; }
-        inline T& operator()(P p) noexcept { return data_.data()[p.y + p.x*Height]; }
+		inline T& at(int y, int x) noexcept { return data_.data()[y + x * Height]; }
+		inline T at(int y, int x) const noexcept { return data_.data()[y + x * Height]; }
+		inline T operator()(int y, int x) const noexcept { return data_.data()[y + x * Height]; }
+		inline T operator()(P p) const noexcept { return data_.data()[p.y + p.x * Height]; }
+		inline T& operator()(int y, int x) noexcept { return data_.data()[y + x * Height]; }
+		inline T& operator()(P p) noexcept { return data_.data()[p.y + p.x * Height]; }
 
         // 範囲内なら値，そうでないなら-1
         inline T safeat(int y, int x) const noexcept { return safe(y,x) ? at(y, x) : -1; }
@@ -81,25 +81,32 @@ namespace Game {
 
 
     // yが重力方向．Fieldと異なるよ
-    class Pack : public Matrix<int8_t, 2, 2> {
+    class Pack {
+		array<int8_t, 4> data_;
 
     public:
-        inline Pack() :Matrix() { }
-        inline Pack(vector<int8_t>&& d) :Matrix(move(d)) { }
-        inline Pack(initializer_list<int8_t>&& d) : Matrix(move(d)) { data_.resize(2*2); }
+        inline Pack() { }
+		inline Pack(vector<int8_t>&& d) :data_({ d[0], d[1], d[2], d[3] }) { }
+		inline Pack(initializer_list<int8_t>&& d) : data_({ *(d.begin()), *(d.begin()+1) ,* (d.begin()+2),* (d.begin()+3) }) { }
 
         //
+		inline int8_t& at(int y, int x) noexcept { return data_[y | (x << 1)]; }
+		inline int8_t at(int y, int x) const noexcept { return data_[y | (x << 1)]; }
+		inline int8_t operator()(int y, int x) const noexcept { return data_[y | (x << 1)]; }
+		inline int8_t operator()(P p) const noexcept { return data_[p.y | (p.x << 1)]; }
+		inline int8_t& operator()(int y, int x) noexcept { return data_[y | (x << 1)]; }
+		inline int8_t& operator()(P p) noexcept { return data_[p.y | (p.x << 1)]; }
 
         // 右回転をcnt回数行ったパックを返す
         inline Pack rotated(int cnt) const {
             const static int pat[][4] = { {0,1,2,3},{1,3,0,2},{3,2,1,0},{2,0,3,1} };
-            vector<int8_t> d(4);
+            Pack d;
             cnt &= 3;
-            d[0] = data_[pat[cnt][0]];
-            d[1] = data_[pat[cnt][1]];
-            d[2] = data_[pat[cnt][2]];
-            d[3] = data_[pat[cnt][3]];
-            return Pack(move(d));
+            d.data_[0] = data_[pat[cnt][0]];
+            d.data_[1] = data_[pat[cnt][1]];
+            d.data_[2] = data_[pat[cnt][2]];
+            d.data_[3] = data_[pat[cnt][3]];
+            return d;
         }
 
         // 右回転をcnt回数行う
@@ -111,6 +118,7 @@ namespace Game {
             std::swap(data_[2], data_[pat[cnt][2]]);
         }
 
+		inline bool operator ==(const Pack& p) const { return data_ == p.data_; }
     };
 
 
@@ -243,6 +251,15 @@ namespace Game {
         }
         return os;
     }
+
+	inline istream& operator>>(istream& is, Pack& p) {
+		int a, b, c, d;
+		is >> a >> b >> c >> d;
+		p(0, 0) = a; p(0, 1) = b; p(1, 0) = c; p(1, 1) = d;
+		string str; is >> str;
+		assert(str == "END");
+		return is;
+	}
 
     inline ostream& operator <<(ostream& os, Command cmd) {
         if (cmd.skill()) os << 'S';
