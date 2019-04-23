@@ -220,6 +220,7 @@ namespace Game {
         inline void swap(Command& cmd) noexcept {
             std::swap(data_, cmd.data_);
         }
+		inline bool operator ==(Command c) const noexcept { return data_ == c.data_; }
     };
 
 

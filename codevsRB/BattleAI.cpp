@@ -39,6 +39,7 @@ struct SearchState {
 
 
 static decltype(FirstInput::packs) packs;
+// vstatic array<array<Pack, 4>, N> rotatedPacks; // 回転済みのパック TODO: 
 
 
 //
@@ -97,14 +98,17 @@ static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBe
     return best;
 }
 
+// 先読み探索の深さ
+static const int MaxDepth = 12;
+
+static const int NumOfThreads = 12;
+static const int TimeLimit = 7500;
 
 // 
 static vector<Command> solveSequence(const Input& input, const int stackedOjama) {
 
     cerr << "solve: " << input.turn << " ";
 
-    // 先読み探索の深さ
-    const int MaxDepth = 12;
     // ちょくだいさーち
 	static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
 	for (auto& ss : stackedStates) ss.clear(), ss.reserve(10000);
@@ -158,99 +162,123 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     // 時間が許す限り探索する
     int loopcount = 0;
     static int totaloppcount = 0;
-    for (auto timer = TIME; MILLISEC(TIME - timer) < 7500; ) {
 
-        repeat(depth, MaxDepth) {
-            if (stackedStates[depth].empty()) continue;
-            const SearchState& currss = stackedStates[depth].top();
+	if (execOptions.enableMultiThread) {
+		// マルチスレッドによる探索
+		mutex mtx;
 
-            if (execOptions.enableMultiThread) {
-				// マルチスレッド実行
-                list<thread> threads;
-                mutex mtx;
+		// マルチスレッド実行
+		list<thread> threads;
 
-				auto copied_currss = currss;
+		repeat(_, NumOfThreads) threads.emplace_back([&input, &mtx, &best, stackedOjama, milestoneIdxBegin, milestoneIdxEnd]() {
+			// memo: スレッドセーフであること！
+			mtx.lock();
+			SearchState ssStocker[W][4];
+			bool ok[W][4];
+			SearchState currss;
+			mtx.unlock();
+			for (auto timer = TIME; MILLISEC(TIME - timer) < TimeLimit; ) {
 
-				if (stackedOjama > depth + 1) copied_currss.field.stackOjama();
+				repeat(depth, MaxDepth) {
+
+					// 扱うSearchStateを取得
+					{
+						lock_guard<mutex> lock(mtx); // 排他ロック
+
+						if (stackedStates[depth].empty()) continue;
+						currss = stackedStates[depth].top();
+						stackedStates[depth].pop();
+					}
+
+					// ojamaを降らせる
+					if (stackedOjama > depth + 1) currss.field.stackOjama();
 
 
-				array<Pack, 4> rotatedPack = {
-					packs[input.turn + depth + 1],
-					packs[input.turn + depth + 1].rotated(1),
-					packs[input.turn + depth + 1].rotated(2),
-					packs[input.turn + depth + 1].rotated(3)
-				};
+					array<Pack, 4> rotatedPack = {
+						packs[input.turn + depth + 1],
+						packs[input.turn + depth + 1].rotated(1),
+						packs[input.turn + depth + 1].rotated(2),
+						packs[input.turn + depth + 1].rotated(3)
+					};
 
-                repeat(x, W - 1) {
+					Tag<int, Command> localBest(-1, 0);
+					repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
 
-					threads.emplace_back([&](int xPos, array<SearchState, 4> ssl) {
-                        // memo: スレッドセーフであること！
-                        // <score, cmd.r>
-                        pair<int, int> localBest( -1, 0 );
-                        bool ok[] = { true, true, true, true };
-                        repeat(r, 4) {
-                            SearchState& ss = ssl[r];
+					// コマンド探索
+					repeat(x, W - 1) {
+						repeat(r, 4) {
+							ssStocker[x][r] = currss;
+							SearchState& ss = ssStocker[x][r];
 
-                            ss.field.insert(rotatedPack[r], xPos);
-                            int chainscore = ChainScore[ss.field.chain().first];
-                            if (ss.field.isOverFlow()) { ok[r] = false; continue; } // オーバーフローしたら無効
-                            int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+							ss.field.insert(rotatedPack[r], x);
+							int chainscore = ChainScore[ss.field.chain().first];
+							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
+							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 
-                            // ss.commands.push_back(Command(x, r)); // NG. スレッドセーフでない.排他ロックのスコープでpushする
+							// ss.commands.push_back(Command(x, r)); // 非推奨。排他ロックのスコープでpushする
 
-                            ss.heuristic += heuristic;
-                            // ss.skill += (ss.score > 0 ? 8 : 0);
+							ss.heuristic += heuristic;
+							// ss.skill += (ss.score > 0 ? 8 : 0);
 
-                            chmax(localBest, decltype(localBest)(chainscore, r));
-                        }
-                        {
-							// ここのブロックは排他ロックするので、スレッドセーフでなくても良い
-                            lock_guard<mutex> lock(mtx);
+							chmax(localBest, decltype(localBest)(chainscore, Command(x, r)));
+						}
+					}
+					{
+						lock_guard<mutex> lock(mtx); // 排他ロック
 
-                            repeat(r, 4) {
-                                if (!ok[r]) continue;
+						repeat(x, W - 1) {
+							repeat(r, 4) { // TODO:
+								if (!ok[x][r]) continue;
+								ssStocker[x][r].commands.push_back(Command(x, r));
 
-                                ssl[r].commands.push_back(Command(xPos, r));
+								if (Command(x, r) == localBest.second && localBest.first > best.first)
+									best = Tag<int, vector<Command>>(localBest.first, ssStocker[x][r].commands);
 
-                                if (r == localBest.second && localBest.first > 0)
-                                    chmax(best, Tag<int, vector<Command>>(localBest.first, ssl[localBest.second].commands));
+								stackedStates[depth + 1].push(ssStocker[x][r]);
+							}
+						}
 
-                                stackedStates[depth + 1].push(move(ssl[r]));
-                            }
-                            
-                        }
-                        }, x, array<SearchState, 4>{copied_currss, copied_currss, copied_currss, copied_currss});
-                }
-                for (auto& t : threads) t.join();
-            }
-            else {
-				// マルチスレッドでない
+					}
+				}
 
-                repeat(r, 4) {
-                    auto pack = packs[input.turn + depth + 1].rotated(r);
-                    repeat(x, W - 1) {
-                        SearchState ss = currss;
+				// ++loopcount;
+			}
+			});
+		for (auto& t : threads) t.join();
+	}
+	else {
+		// マルチスレッドでない探索
+		for (auto timer = TIME; MILLISEC(TIME - timer) < TimeLimit; ) {
+
+			repeat(depth, MaxDepth) {
+				if (stackedStates[depth].empty()) continue;
+				const SearchState& currss = stackedStates[depth].top();
+
+				repeat(r, 4) {
+					auto pack = packs[input.turn + depth + 1].rotated(r);
+					repeat(x, W - 1) {
+						SearchState ss = currss;
 						if (stackedOjama > depth + 1) ss.field.stackOjama();
 
 						ss.field.insert(pack, x);
-                        int chainscore = ChainScore[ss.field.chain().first];
+						int chainscore = ChainScore[ss.field.chain().first];
 						if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
-                        int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-                        ss.commands.push_back(Command(x, r));
-                        // chmax(ss.score, cs);
-                        ss.heuristic += heuristic;
-                        // ss.skill += (ss.score > 0 ? 8 : 0);
-                        chmax(best, decltype(best)(chainscore, ss.commands));
+						int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+						ss.commands.push_back(Command(x, r));
+						// chmax(ss.score, cs);
+						ss.heuristic += heuristic;
+						// ss.skill += (ss.score > 0 ? 8 : 0);
+						chmax(best, decltype(best)(chainscore, ss.commands));
 
-                        stackedStates[depth + 1].push(move(ss));
-                    }
-                }
-            }
+						stackedStates[depth + 1].push(move(ss));
+					}
+				}
 
-            stackedStates[depth].pop();
-        }
-        ++loopcount;
-    }
+				stackedStates[depth].pop();
+			}
+			++loopcount;
+		}
+	}
 
     clog << "loop:" << loopcount << ", best:" << best.first << "\n";
     clog << "totaloop: " << (totaloppcount += loopcount) << "\n";
