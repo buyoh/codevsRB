@@ -41,6 +41,7 @@ TEST(FieldTest, FallenPack) {
     EXPECT_EQ(field(1, 0), 1);
     EXPECT_EQ(field(0, 1), 3);
     EXPECT_EQ(field(1, 1), 4);
+	EXPECT_EQ(field.getHighest(), 2);
 }
 
 TEST(FieldTest, ChainHorizontal) {
@@ -182,6 +183,7 @@ TEST(FieldTest, OverflowField) {
 		bool ok2 = !field.isOverFlow();
 		EXPECT_EQ(ok, ok2);
         height += 1;
+		EXPECT_EQ(field.getHighest(), height);
         if (height > HLimit) {
             EXPECT_FALSE(ok) << "fall will fail H=" << height;
             break;

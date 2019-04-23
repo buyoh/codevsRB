@@ -151,7 +151,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 			int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 			int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 			ss.score = skillscore;
-			ss.heuristic += heuristic;
+			ss.heuristic = heuristic;
 
 			chmax(best, decltype(best)(skillscore, ss.commands));
 
@@ -214,10 +214,12 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
 							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+							//int height = ss.field.getHighest();
+							//heuristic -= height / 2;
 
 							// ss.commands.push_back(Command(x, r)); // 非推奨。排他ロックのスコープでpushする
 
-							ss.heuristic += heuristic;
+							ss.heuristic = heuristic;
 							// ss.skill += (ss.score > 0 ? 8 : 0);
 
 							chmax(localBest, decltype(localBest)(chainscore, Command(x, r)));
@@ -264,9 +266,12 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 						int chainscore = ChainScore[ss.field.chain().first];
 						if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
 						int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+						// int height = ss.field.getHighest();
+						// heuristic -= height / 2;
+
 						ss.commands.push_back(Command(x, r));
 						// chmax(ss.score, cs);
-						ss.heuristic += heuristic;
+						ss.heuristic = heuristic;
 						// ss.skill += (ss.score > 0 ? 8 : 0);
 						chmax(best, decltype(best)(chainscore, ss.commands));
 
