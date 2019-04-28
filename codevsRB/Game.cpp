@@ -119,7 +119,7 @@ namespace Game {
 
     //
     int Field::partialEliminate(array<int, W>& enabledCols) {
-        array<pair<int8_t, int8_t>, 32> erased;
+        array<P, 32> erased;
         int erasedPtr = 0;
         // 消されるブロックをマークする
         repeat(x, W - 1) {
@@ -132,18 +132,23 @@ namespace Game {
                 bool b = false;
                 if (y > 0 && at(y - 1, x + 1) == 10 - a)
                     b = true,
-                    erased[erasedPtr++] = make_pair(y - 1, x + 1);
+                    erased[erasedPtr].y = y - 1,
+					erased[erasedPtr++].x = x + 1;
                 if (at(y, x + 1) == 10 - a)
                     b = true,
-                    erased[erasedPtr++] = make_pair(y, x + 1);
+					erased[erasedPtr].y = y,
+					erased[erasedPtr++].x = x + 1;
                 if (y < H - 1 && at(y + 1, x + 1) == 10 - a)
                     b = true,
-                    erased[erasedPtr++] = make_pair(y + 1, x + 1);
+					erased[erasedPtr].y = y + 1,
+					erased[erasedPtr++].x = x + 1;
                 if (y < H - 1 && at(y + 1, x) == 10 - a)
                     b = true,
-                    erased[erasedPtr++] = make_pair(y + 1, x);
+					erased[erasedPtr].y = y + 1,
+					erased[erasedPtr++].x = x;
                 if (b)
-                    erased[erasedPtr++] = make_pair(y, x);
+					erased[erasedPtr].y = y,
+					erased[erasedPtr++].x = x;
 
             }
         }
@@ -155,8 +160,10 @@ namespace Game {
                 auto a = at(y, x);
                 if (a == Ojama) continue;
                 if (at(y + 1, x) == 10 - a)
-                    erased[erasedPtr++] = make_pair(y, x),
-                    erased[erasedPtr++] = make_pair(y + 1, x);
+					erased[erasedPtr].y = y,
+					erased[erasedPtr++].x = x,
+					erased[erasedPtr].y = y + 1,
+					erased[erasedPtr++].x = x;
             }
         }
 
@@ -167,9 +174,9 @@ namespace Game {
         int cnt = 0;
         repeat(i, erasedPtr) {
             auto p = erased[i];
-            cnt += at(p.first, p.second) > 0;
-            at(p.first, p.second) = 0;
-            chmax<int>(enabledCols[p.second], p.first + 1);
+            cnt += at(p.y, p.x) > 0;
+            at(p.y, p.x) = 0;
+            chmax<int>(enabledCols[p.x], p.y + 1);
         }
 
         return cnt;
