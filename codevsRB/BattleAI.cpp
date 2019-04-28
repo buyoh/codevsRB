@@ -346,27 +346,34 @@ void BattleAI::setup(const Game::FirstInput& fi) {
 Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 
     if (input.turn == 0) {
+		// shuffleコマンドが有効
         if (execOptions.shuffleFirstCommand) {
             random_device r;
             return Command((uniform_int_distribution<int>(0, W - 2))(r), (uniform_int_distribution<int>(0, 3))(r));
         }
     }
 
-    static vector<Command> pool;
-    static int stackedOjama = 0;
-    if (pool.empty() ||
-        (input.me.ojama >= 10 && stackedOjama-- <= 0) ||
-        (pool.back().skill() && !input.me.skillable())) {
-        pool = solveSequence(input, stackedOjama = input.me.ojama/10);
+    static vector<Command> pool; // コマンドのリスト(末尾が次に実行するコマンド)
+    static int stackedOjama = 0; // 想定されるお邪魔の数
+
+    if (pool.empty() || // リストが空になった
+        (input.me.ojama/10 != stackedOjama) || // お邪魔の数が一致していない
+        (pool.back().skill() && !input.me.skillable())) { // スキルを使うコマンドだが使えない
+
+        pool = solveSequence(input, stackedOjama = input.me.ojama/10); // 再計算する
         reverse(ALL(pool));
     }
+
+	// お邪魔を計算
+	if (stackedOjama > 0) --stackedOjama;
+
+	// コマンドのリストを実行する
     if (!pool.empty()) {
         auto c = pool.back();
         pool.pop_back();
         return c;
     }
-
+	// あかん
     cerr << "No commands" << endl;
-
     return Command::Skill;
 }
