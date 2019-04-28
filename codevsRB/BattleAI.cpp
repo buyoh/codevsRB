@@ -65,21 +65,31 @@ static bool checkStackedOjama(const Field& field) {
 //
 
 
+
+// field: 対象
+// milestonePack: 発火対象
+// workField: 作業用Field
+static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd, Field& tempField) {
+	int best = 0;
+	iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd) {
+		repeat(r, 4) {
+			auto pack = packs[mpi].rotated(r);
+			repeat(i, W - 1) {
+				tempField = field;
+				tempField.insert(pack, i);
+				chmax(best, ChainScore[tempField.chain().first]);
+			}
+		}
+	}
+	return best;
+}
+
+
 // field: 対象
 // milestonePack: 発火対象
 static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
-    int best = 0;
-    iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd){
-        repeat(r, 4) {
-            auto pack = packs[mpi].rotated(r);
-            repeat(i, W - 1) {
-                Field f = field;
-                f.insert(pack, i);
-                chmax(best, ChainScore[f.chain().first]);
-            }
-        }
-    }
-    return best;
+	Field f;
+    return calcHeuristic(field, milestonePackIndexBegin, milestonePackIndexEnd, f);
 }
 
 // ticket #14 1つの数字ブロックを落としてスコア計算？
@@ -172,22 +182,24 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 
 		repeat(_, NumOfThreads) threads.emplace_back([&input, &mtx, &best, stackedOjama, milestoneIdxBegin, milestoneIdxEnd]() {
 			// memo: スレッドセーフであること！
+
 			mtx.lock();
 			SearchState ssStocker[W][4];
 			bool ok[W][4];
 			SearchState currss;
-			mtx.unlock();
+			Field tempField;
+
 			for (auto timer = TIME; MILLISEC(TIME - timer) < TimeLimit; ) {
 
 				repeat(depth, MaxDepth) {
 
 					// 扱うSearchStateを取得
 					{
-						lock_guard<mutex> lock(mtx); // 排他ロック
-
+						// 排他ロック
 						if (stackedStates[depth].empty()) continue;
 						currss = stackedStates[depth].top();
 						stackedStates[depth].pop();
+						mtx.unlock();
 					}
 
 					// ojamaを降らせる
@@ -213,7 +225,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 							ss.field.insert(rotatedPack[r], x);
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
-							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
+							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd, tempField);
 							//int height = ss.field.getHighest();
 							//heuristic -= height / 2;
 
@@ -226,7 +238,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 						}
 					}
 					{
-						lock_guard<mutex> lock(mtx); // 排他ロック
+						// 排他ロック
+						mtx.lock();
 
 						repeat(x, W - 1) {
 							repeat(r, 4) { // TODO:
@@ -242,9 +255,11 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 
 					}
 				}
-
 				// ++loopcount;
 			}
+			mtx.unlock();
+
+
 			});
 		for (auto& t : threads) t.join();
 	}
