@@ -184,25 +184,50 @@ namespace Game {
 
 
     int Field::explode() {
-        Matrix<int8_t, H, W> flag;
+		array<array<bool, H>, W> flag;
+		for (auto& v : flag) v.fill(false);
 
         // 消されるブロックをマークする
-        repeat(x, W) {
+        repeat(x, W - 1) {
             repeat(y, H) {
-                if (at(y, x) == Ojama || at(y, x) == 0 || at(y, x) == 5) continue;
-                iterate(i, -1, 2) {
-                    iterate(j, -1, 2) {
-                        if (safeat(y + j, x + i) == 5) flag(y, x) = 1; 
-                    }
-                }
+                if (at(y, x) == Ojama || at(y, x) == 0) continue;
+
+				if (at(y, x) == 5) {
+					flag[x][y] = true;
+					if (0 < y) flag[x][y - 1] = true;
+					if (0 < y) flag[x + 1][y - 1] = true;
+					flag[x + 1][y] = true;
+					if (y < H - 1) flag[x + 1][y + 1] = true;
+				}
+				else {
+					if (0 < y && at(y - 1, x) == 5) flag[x][y] = true;
+					else if (0 < y && at(y - 1, x + 1) == 5) flag[x][y] = true;
+					else if (at(y, x + 1) == 5) flag[x][y] = true;
+					else if (y < H - 1 && at(y + 1, x + 1) == 5) flag[x][y] = true;
+				}
             }
         }
+		{
+			const int x = W - 1;
+			repeat(y, H) {
+				if (at(y, x) == Ojama || at(y, x) == 0) continue;
+
+				if (at(y, x) == 5) {
+					flag[x][y] = true;
+					if (0 < y) flag[x][y - 1] = true;
+				}
+				else {
+					if (0 < y && at(y - 1, x) == 5) flag[x][y] = true;
+				}
+			}
+		}
 
         // マークした点を消去
         int cnt = 0;
         repeat(x, W) {
             repeat(y, H) {
-                if (at(y, x) == 5 || flag(y, x) == 1) at(y, x) = 0, ++cnt;
+                if (at(y, x) != Ojama && at(y, x) != 0 && flag[x][y] == 1)
+					at(y, x) = 0, ++cnt;
             }
         }
 
