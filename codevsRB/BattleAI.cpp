@@ -108,22 +108,41 @@ static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBe
     return best;
 }
 
+
+//
+
+
 // 先読み探索の深さ
 static const int MaxDepth = 12;
-
+// 探索に割り当てるスレッド数（MainThreadも含めるとNumOfThreadsを超える）
 static const int NumOfThreads = 12;
+// 探索に割り当てる時間
 static const int TimeLimit = 7500;
+// 評価に使うパックの個数
+static const int milestoneIdxRange = 3;
+
+
+//
+
+
+// ちょくだいさーち
+// 自作PQにする意味はあまり無い(消費メモリの大半はFieldのvector<T>で、これは別のタイミングで確保・解放されるため)
+static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
+
+
+//
+
 
 // 
 static vector<Command> solveSequence(const Input& input, const int stackedOjama) {
 
     cerr << "solve: " << input.turn << " ";
 
-    // ちょくだいさーち
-	static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
-	for (auto& ss : stackedStates) ss.clear(), ss.reserve(10000);
+	// 初期化
+	for (auto& ss : stackedStates) ss.clear(), ss.reserve(100000);
 
-    const int milestoneIdxBegin = input.turn + MaxDepth - 3;
+	// 評価に使うパックのindex
+    const int milestoneIdxBegin = input.turn + MaxDepth - milestoneIdxRange;
     const int milestoneIdxEnd = input.turn + MaxDepth;
 
 	Tag<int, vector<Command>> best(-1, vector<Command>());
@@ -376,4 +395,9 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 	// あかん
     cerr << "No commands" << endl;
     return Command::Skill;
+}
+
+
+void BattleAI::background(int turncount, const atomic_bool& isfinished) {
+	// nop
 }

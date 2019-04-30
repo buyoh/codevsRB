@@ -23,8 +23,13 @@ void execAI(istream& fin, ostream& fout) {
     Game::FirstInput fi; fi.input(fin);
     ai.setup(fi);
 
-    while (true) {
-        Game::Input i; i.input(fin);
+	for (int cnt = 0; ; ++cnt) {
+		Game::Input i;
+		atomic_bool loaded = false;
+		auto t2 = thread([cnt, &ai, &loaded]() { ai.background(cnt, loaded); });
+		i.input(fin); loaded = true;
+		t2.join();
+         
         auto cmd = ai.loop(i, fi.packs[i.turn]);
 
         fout << cmd << endl;

@@ -40,6 +40,11 @@ void exit_invalidOption() {
 
 //
 
+void signalAborter(int s) {
+	clog << "signal detected(" << s << ")" << endl;
+	abort();
+}
+
 
 int main(int argc, char** argv) {
 
@@ -102,6 +107,9 @@ int main(int argc, char** argv) {
         }
 
     }
+
+	// signal(SIGINT, signalAborter);
+	// signal(SIGTERM, signalAborter);
 
     switch (mode)
     {
