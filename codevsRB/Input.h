@@ -51,7 +51,7 @@ namespace Game {
         tuple<int, int, int, bool> apply(Command, const Pack&);
 
         // スキルが利用可能かどうか
-        inline bool skillable() const noexcept { return skill >= 80; }
+        inline bool skillable() const noexcept { return skill >= SkillRequirement; }
     };
 
 

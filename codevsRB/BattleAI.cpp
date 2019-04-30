@@ -129,12 +129,19 @@ static const int milestoneIdxRange = 3;
 // 自作PQにする意味はあまり無い(消費メモリの大半はFieldのvector<T>で、これは別のタイミングで確保・解放されるため)
 static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
 
+// backgroundで使う。次に読み込まれるはずの、自身のField情報
+static Player savedMyPlayer;
+
+
+static int lastMilestoneIdxBegin = MaxDepth - milestoneIdxRange;
+static int lastMilestoneIdxEnd = MaxDepth;
+static int lastPredictedScore = 0;
 
 //
 
 
 // 
-static vector<Command> solveSequence(const Input& input, const int stackedOjama) {
+static vector<Command> solveSequence(const Input& input, const int stackedOjama, const atomic_bool& timekeeper) {
 
     cerr << "solve: " << input.turn << " ";
 
@@ -146,6 +153,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
     const int milestoneIdxEnd = input.turn + MaxDepth;
 
 	Tag<int, vector<Command>> best(-1, vector<Command>());
+
+	const bool enableSkill = input.me.skillable();
 
 	// firstTurn
 	{
@@ -172,8 +181,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 			}
 		}
 		// スキルが発動可能ならば入れる．
-		// スキルによって積み上がることは無いので，連鎖作成には使えない．よって1手目のみ考慮する．
-		if (input.me.skillable()) {
+		// スキルゲージを稼ぎつつ積み上げることは難しいので，連鎖とスキルは共存出来ない。
+		if (enableSkill) {
 			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0 };
 
 			int bombcnt = ss.field.explode(); ss.field.fall();
@@ -188,35 +197,41 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 		}
 	}
 
-    // 時間が許す限り探索する
     int loopcount = 0;
-    static int totaloppcount = 0;
 
-	if (execOptions.enableMultiThread) {
+    // 時間が許す限り探索する
+	{
 		// マルチスレッドによる探索
 		mutex mtx;
 
 		// マルチスレッド実行
 		list<thread> threads;
 
-		repeat(_, NumOfThreads) threads.emplace_back([&input, &mtx, &best, stackedOjama, milestoneIdxBegin, milestoneIdxEnd]() {
+		const int numOfThreads = execOptions.enableMultiThread ? NumOfThreads : 1;
+
+		repeat(_, numOfThreads) threads.emplace_back(
+			[
+				&input, &timekeeper, &mtx, &best, &loopcount, 
+				stackedOjama, milestoneIdxBegin, milestoneIdxEnd, enableSkill
+			]() {
 			// memo: スレッドセーフであること！
 
+			// 排他ロック
 			mtx.lock();
 			SearchState ssStocker[W][4];
 			bool ok[W][4];
-			SearchState currss;
-			Field tempField;
+			SearchState currss; // stackedStatesから取り出したもの。
+			Field tempField; // calcHeuristic用
+			int localLoopcount = 0;
 
-			for (auto timer = TIME; MILLISEC(TIME - timer) < TimeLimit; ) {
+			while (timekeeper) {
 
 				repeat(depth, MaxDepth) {
-
 					// 扱うSearchStateを取得
 					{
 						// 排他ロック
 						if (stackedStates[depth].empty()) continue;
-						currss = stackedStates[depth].top();
+						currss = move(stackedStates[depth].top());
 						stackedStates[depth].pop();
 						mtx.unlock();
 					}
@@ -224,7 +239,8 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 					// ojamaを降らせる
 					if (stackedOjama > depth + 1) currss.field.stackOjama();
 
-
+					// 回転済みパック
+					// ヒープではないので、この確保はスレッドセーフ。
 					array<Pack, 4> rotatedPack = {
 						packs[input.turn + depth + 1],
 						packs[input.turn + depth + 1].rotated(1),
@@ -245,8 +261,6 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
 							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd, tempField);
-							//int height = ss.field.getHighest();
-							//heuristic -= height / 2;
 
 							// ss.commands.push_back(Command(x, r)); // 非推奨。排他ロックのスコープでpushする
 
@@ -274,53 +288,20 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 
 					}
 				}
-				// ++loopcount;
+				++localLoopcount;
 			}
+
+			// 排他ロック
+			loopcount += localLoopcount;
 			mtx.unlock();
 
 
 			});
 		for (auto& t : threads) t.join();
 	}
-	else {
-		// マルチスレッドでない探索
-		for (auto timer = TIME; MILLISEC(TIME - timer) < TimeLimit; ) {
 
-			repeat(depth, MaxDepth) {
-				if (stackedStates[depth].empty()) continue;
-				const SearchState& currss = stackedStates[depth].top();
-
-				repeat(r, 4) {
-					auto pack = packs[input.turn + depth + 1].rotated(r);
-					repeat(x, W - 1) {
-						SearchState ss = currss;
-						if (stackedOjama > depth + 1) ss.field.stackOjama();
-
-						ss.field.insert(pack, x);
-						int chainscore = ChainScore[ss.field.chain().first];
-						if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
-						int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-						// int height = ss.field.getHighest();
-						// heuristic -= height / 2;
-
-						ss.commands.push_back(Command(x, r));
-						// chmax(ss.score, cs);
-						ss.heuristic = heuristic;
-						// ss.skill += (ss.score > 0 ? 8 : 0);
-						chmax(best, decltype(best)(chainscore, ss.commands));
-
-						stackedStates[depth + 1].push(move(ss));
-					}
-				}
-
-				stackedStates[depth].pop();
-			}
-			++loopcount;
-		}
-	}
-
+	// output logs
     clog << "loop:" << loopcount << ", best:" << best.first << "\n";
-    clog << "totaloop: " << (totaloppcount += loopcount) << "\n";
     repeat(depth, MaxDepth + 1) {
         clog << stackedStates[depth].size() << "\n";
     }
@@ -330,7 +311,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 	}
 	clog << "cmd.size = " << best.second.size() << endl;
 
-
+	// check commands
 	if (execOptions.checkOutputCommands) {
 		Player me = input.me;
 		int t = 0;
@@ -348,6 +329,10 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 		}
 	}
 
+	// 後処理
+	lastMilestoneIdxBegin = milestoneIdxBegin;
+	lastMilestoneIdxEnd = milestoneIdxEnd;
+	lastPredictedScore = best.first;
 
     return best.second;
 }
@@ -358,17 +343,31 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama)
 
 void BattleAI::setup(const Game::FirstInput& fi) {
     packs = fi.packs;
+}
 
+
+//
+
+
+static void applyCommandToSavedMyField(const Pack& turnPack, Command cmd) {
+	int score, chain, sender; bool success;
+	tie(score, chain, sender, success) = savedMyPlayer.apply(cmd, turnPack);
+
+	if (chain > 0) savedMyPlayer.skill += 8;
 }
 
 
 Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 
+	savedMyPlayer = input.me;
+
     if (input.turn == 0) {
 		// shuffleコマンドが有効
         if (execOptions.shuffleFirstCommand) {
             random_device r;
-            return Command((uniform_int_distribution<int>(0, W - 2))(r), (uniform_int_distribution<int>(0, 3))(r));
+			Command cmd((uniform_int_distribution<int>(0, W - 2))(r), (uniform_int_distribution<int>(0, 3))(r));
+			applyCommandToSavedMyField(turnPack, cmd);
+            return cmd;
         }
     }
 
@@ -379,7 +378,15 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
         (input.me.ojama/10 != stackedOjama) || // お邪魔の数が一致していない
         (pool.back().skill() && !input.me.skillable())) { // スキルを使うコマンドだが使えない
 
-        pool = solveSequence(input, stackedOjama = input.me.ojama/10); // 再計算する
+		atomic_bool timekeeper(true);
+		thread th([&input, &timekeeper]() {
+			pool = solveSequence(input, stackedOjama = input.me.ojama / 10, timekeeper); // 再計算する
+			});
+		
+		this_thread::sleep_for(chrono::milliseconds(TimeLimit)); // 待つ。
+		timekeeper = false; // 通知。
+		th.join(); // 通知後、完了を待つ。
+
         reverse(ALL(pool));
     }
 
@@ -399,5 +406,10 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 
 
 void BattleAI::background(int turncount, const atomic_bool& isfinished) {
-	// nop
+	// 最初は待ち時間が無いはず
+	if (turncount == 0) {
+		return;
+	}
+
+
 }

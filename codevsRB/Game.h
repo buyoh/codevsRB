@@ -18,6 +18,10 @@ namespace Game {
     const int8_t Ojama = 11; // お邪魔ブロックの色
     const int8_t None = 0; // 空虚の色
 
+	const int SkillIncrement = 8;
+	const int SkillRequirement = 80;
+
+
 
 
     // 抽象構造体

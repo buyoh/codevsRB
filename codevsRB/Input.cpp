@@ -82,17 +82,17 @@ namespace Game {
 
         // スキルゲージの消耗
         if (cmdMe.skill()) {
-            assert(me.skill >= 80);
+            assert(me.skill >= SkillRequirement);
             me.skill = 0;
         }
         if (cmdEn.skill()) {
-            assert(en.skill >= 80);
+            assert(en.skill >= SkillRequirement);
             en.skill = 0;
         }
 
         // スキルゲージの変化
-        if (mechain >= 1) me.skill += 8;
-        if (enchain >= 1) en.skill += 8;
+        if (mechain >= 1) me.skill += SkillIncrement;
+        if (enchain >= 1) en.skill += SkillIncrement;
         chlim(me.skill, 0, 100);
         chlim(en.skill, 0, 100);
         if (mechain >= 3) en.skill -= 12 + 2 * mechain;
