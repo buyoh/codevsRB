@@ -23,16 +23,17 @@ void execAI(istream& fin, ostream& fout) {
     Game::FirstInput fi; fi.input(fin);
     ai.setup(fi);
 
-	for (int cnt = 0; ; ++cnt) {
-		Game::Input i;
-		atomic_bool loaded = false;
-		auto t2 = thread([cnt, &ai, &loaded]() { ai.background(cnt, loaded); });
-		i.input(fin); loaded = true;
+	while (true) {
+		Game::Input input;
+		atomic_bool timekeeper = true;
+		auto t2 = thread([&ai, &timekeeper]() { ai.background(timekeeper); });
+		input.input(fin); timekeeper = false;
 		t2.join();
          
-        auto cmd = ai.loop(i, fi.packs[i.turn]);
+        auto cmd = ai.loop(input, fi.packs[input.turn]);
 
         fout << cmd << endl;
+		clog << cmd << endl;
     }
 
 }

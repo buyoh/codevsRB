@@ -82,11 +82,11 @@ namespace Game {
 
         // スキルゲージの消耗
         if (cmdMe.skill()) {
-            assert(me.skill >= SkillRequirement);
+            if (me.skill < SkillRequirement) return false;
             me.skill = 0;
         }
         if (cmdEn.skill()) {
-            assert(en.skill >= SkillRequirement);
+			if (en.skill < SkillRequirement) return false;
             en.skill = 0;
         }
 

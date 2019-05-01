@@ -11,7 +11,7 @@ public:
     virtual string aiName() const = 0;
     virtual void setup(const Game::FirstInput&) = 0;
     virtual Game::Command loop(const Game::Input&, const Game::Pack&) = 0;
-	virtual void background(int turn, const atomic_bool& finished) = 0;
+	virtual void background(const atomic_bool& finished) = 0;
 };
 
 
@@ -24,5 +24,5 @@ public:
     inline string aiName() const override { return "mai-" __DATE__; };
     void setup(const Game::FirstInput&) override;
     Game::Command loop(const Game::Input&, const Game::Pack&) override;
-	void background(int, const atomic_bool&) override;
+	void background(const atomic_bool&) override;
 };

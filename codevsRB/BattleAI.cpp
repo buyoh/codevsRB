@@ -129,8 +129,8 @@ static const int milestoneIdxRange = 3;
 // 自作PQにする意味はあまり無い(消費メモリの大半はFieldのvector<T>で、これは別のタイミングで確保・解放されるため)
 static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
 
-// backgroundで使う。次に読み込まれるはずの、自身のField情報
-static Player savedMyPlayer;
+// backgroundで使う。次に読み込まれるはずの情報
+static Input savedInput;
 
 
 static int lastMilestoneIdxBegin = MaxDepth - milestoneIdxRange;
@@ -141,20 +141,17 @@ static int lastPredictedScore = 0;
 
 
 // 
-static vector<Command> solveSequence(const Input& input, const int stackedOjama, const atomic_bool& timekeeper) {
+static Tag<int, vector<Command>> solveSequence(
+	const Input& input, const int stackedOjama, const atomic_bool& timekeeper,
+	const bool enableSkill, const int milestoneIdxBegin, const int milestoneIdxEnd, const int maxDepth) {
+	// timekeeper: trueの間だけ実行
 
     cerr << "solve: " << input.turn << " ";
 
 	// 初期化
 	for (auto& ss : stackedStates) ss.clear(), ss.reserve(100000);
 
-	// 評価に使うパックのindex
-    const int milestoneIdxBegin = input.turn + MaxDepth - milestoneIdxRange;
-    const int milestoneIdxEnd = input.turn + MaxDepth;
-
 	Tag<int, vector<Command>> best(-1, vector<Command>());
-
-	const bool enableSkill = input.me.skillable();
 
 	// firstTurn
 	{
@@ -193,7 +190,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 
 			chmax(best, decltype(best)(skillscore, ss.commands));
 
-			stackedStates[0].push(move(ss));
+			// stackedStates[0].push(move(ss)); // pushしない(実装する場合、スキルゲージの消耗を考慮しないとダメ)
 		}
 	}
 
@@ -212,21 +209,22 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 		repeat(_, numOfThreads) threads.emplace_back(
 			[
 				&input, &timekeeper, &mtx, &best, &loopcount, 
-				stackedOjama, milestoneIdxBegin, milestoneIdxEnd, enableSkill
+				stackedOjama, milestoneIdxBegin, milestoneIdxEnd, maxDepth, enableSkill
 			]() {
 			// memo: スレッドセーフであること！
 
 			// 排他ロック
 			mtx.lock();
-			SearchState ssStocker[W][4];
-			bool ok[W][4];
+			SearchState ssStocker[W][4], ssStockerSkl;
+			bool ok[W][4], okSkl;
 			SearchState currss; // stackedStatesから取り出したもの。
 			Field tempField; // calcHeuristic用
 			int localLoopcount = 0;
 
 			while (timekeeper) {
+				bool noAction = true;
 
-				repeat(depth, MaxDepth) {
+				repeat(depth, maxDepth) {
 					// 扱うSearchStateを取得
 					{
 						// 排他ロック
@@ -234,6 +232,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 						currss = move(stackedStates[depth].top());
 						stackedStates[depth].pop();
 						mtx.unlock();
+						noAction = false;
 					}
 
 					// ojamaを降らせる
@@ -250,6 +249,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 
 					Tag<int, Command> localBest(-1, 0);
 					repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
+					okSkl = enableSkill;
 
 					// コマンド探索
 					repeat(x, W - 1) {
@@ -270,25 +270,49 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 							chmax(localBest, decltype(localBest)(chainscore, Command(x, r)));
 						}
 					}
+					if (enableSkill) {
+						ssStockerSkl = currss;
+						SearchState& ss = ssStockerSkl;
+
+						int bombcnt = ss.field.explode(); ss.field.fall();
+						int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
+						if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
+						int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd, tempField);
+						ss.score = skillscore;
+						ss.heuristic = heuristic;
+
+						chmax(localBest, decltype(localBest)(skillscore, Command::Skill));
+					}
 					{
 						// 排他ロック
 						mtx.lock();
 
 						repeat(x, W - 1) {
-							repeat(r, 4) { // TODO:
+							repeat(r, 4) {
+								// 失敗したコマンドは何もしない
 								if (!ok[x][r]) continue;
+								// ここでコマンドを追加する(allocateの発生)
 								ssStocker[x][r].commands.push_back(Command(x, r));
 
-								if (Command(x, r) == localBest.second && localBest.first > best.first)
+								// 最良のコマンドならば、更新する
+								if (localBest.first > best.first && Command(x, r) == localBest.second)
 									best = Tag<int, vector<Command>>(localBest.first, ssStocker[x][r].commands);
-
+								// queueに追加
 								stackedStates[depth + 1].push(ssStocker[x][r]);
 							}
+						}
+						// スキルコマンドについて処理
+						if (okSkl) {
+							ssStockerSkl.commands.push_back(Command::Skill);
+							if (Command::Skill == localBest.second && localBest.first > best.first)
+								best = Tag<int, vector<Command>>(localBest.first, ssStockerSkl.commands);
+							// stackedStates[depth + 1].push(ssStockerSkl); // pushしない(実装する場合、スキルゲージの消耗を考慮しないとダメ)
 						}
 
 					}
 				}
 				++localLoopcount;
+				if (noAction) break;
 			}
 
 			// 排他ロック
@@ -302,7 +326,7 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 
 	// output logs
     clog << "loop:" << loopcount << ", best:" << best.first << "\n";
-    repeat(depth, MaxDepth + 1) {
+    repeat(depth, maxDepth + 1) {
         clog << stackedStates[depth].size() << "\n";
     }
 
@@ -334,7 +358,80 @@ static vector<Command> solveSequence(const Input& input, const int stackedOjama,
 	lastMilestoneIdxEnd = milestoneIdxEnd;
 	lastPredictedScore = best.first;
 
-    return best.second;
+    return best;
+}
+
+
+//
+
+
+// 大体あってる
+static inline bool nearlyEqual(const Input& i1, const Input& i2) {
+	return
+		i1.me.ojama / 10 == i2.me.ojama / 10 &&
+		i1.me.skillable() == i2.me.skillable();
+}
+
+
+//
+
+
+// 次の入力を雑に予測して、savedInputに保管
+// 相手が(1ターン先読みの範囲内で)最良のコマンドを叩くとは限らない
+static void setPredicatedNextInput(const Input& currentInput, Command myCommand) {
+	savedInput = currentInput;
+	Tag<int, Command> best(-1, Command::Skill);
+
+	// 相手のコマンドを雑に推定
+	{
+		Field field = savedInput.en.field;
+		if (savedInput.en.ojama > 0) field.stackOjama();
+
+		// 今のターンのコマンドを総当たり
+		repeat(r, 4) {
+			auto pack = packs[savedInput.turn].rotated(r);
+			repeat(x, W - 1) {
+				Command cmd(x, r);
+				Field f = field;
+
+				f.insert(pack, x); // 置く
+				int score = ChainScore[f.chain().first];
+				if (f.isOverFlow()) continue; // オーバーフローしたら無効
+
+				chmax(best, decltype(best)(score, cmd));
+			}
+		}
+	}
+	if (best.first < 0); // コマンドが無かった場合、ほぼ勝ちだが、とりあえず Skill とみなす
+
+	savedInput.apply(myCommand, best.second, packs[savedInput.turn]);
+}
+
+
+//
+
+
+static Tag<int, vector<Command>> generateCommandPool(const Input& input) {
+	// 評価に使うパックのindex
+	const int milestoneIdxBegin = input.turn + MaxDepth - milestoneIdxRange;
+	const int milestoneIdxEnd = input.turn + MaxDepth;
+	// スキルコマンドも探索するか？
+	const bool enableSkill = input.me.skillable();
+
+	Tag<int, vector<Command>> result(-1, vector<Command>());
+
+	atomic_bool timekeeper(true);
+	thread th([&]() {
+		result = solveSequence(input, input.me.ojama / 10, timekeeper,
+			enableSkill, milestoneIdxBegin, milestoneIdxEnd, MaxDepth); // 再計算する
+		});
+
+	this_thread::sleep_for(chrono::milliseconds(TimeLimit)); // 待つ。
+	timekeeper = false; // 通知。
+	th.join(); // 通知後、完了を待つ。
+
+	reverse(ALL(result.second));
+	return move(result);
 }
 
 
@@ -349,67 +446,92 @@ void BattleAI::setup(const Game::FirstInput& fi) {
 //
 
 
-static void applyCommandToSavedMyField(const Pack& turnPack, Command cmd) {
-	int score, chain, sender; bool success;
-	tie(score, chain, sender, success) = savedMyPlayer.apply(cmd, turnPack);
+static vector<Command> commandPool; // コマンドのリスト(末尾が次に実行するコマンド)
+static int bestCommandScore;
+static vector<Command> suggestedCommandPool; // コマンドのリスト(末尾が次に実行するコマンド)
+static int suggestedCommandScore;
 
-	if (chain > 0) savedMyPlayer.skill += 8;
-}
+
+//
 
 
 Command BattleAI::loop(const Input& input, const Pack& turnPack) {
-
-	savedMyPlayer = input.me;
 
     if (input.turn == 0) {
 		// shuffleコマンドが有効
         if (execOptions.shuffleFirstCommand) {
             random_device r;
 			Command cmd((uniform_int_distribution<int>(0, W - 2))(r), (uniform_int_distribution<int>(0, 3))(r));
-			applyCommandToSavedMyField(turnPack, cmd);
+
+			setPredicatedNextInput(input, cmd);
             return cmd;
         }
     }
 
-    static vector<Command> pool; // コマンドのリスト(末尾が次に実行するコマンド)
-    static int stackedOjama = 0; // 想定されるお邪魔の数
+	static int stackedOjama = 0;
 
-    if (pool.empty() || // リストが空になった
-        (input.me.ojama/10 != stackedOjama) || // お邪魔の数が一致していない
-        (pool.back().skill() && !input.me.skillable())) { // スキルを使うコマンドだが使えない
+    if (commandPool.empty() || // リストが空になった
+        input.me.ojama/10 != stackedOjama || // お邪魔の数が一致していない(savedInputを使うと、中途半端な連鎖の予測によって毎回再構築が発生するのでダメ)
+        (commandPool.back().skill() && !input.me.skillable())) { // スキルを使うコマンドだが使えない
 
-		atomic_bool timekeeper(true);
-		thread th([&input, &timekeeper]() {
-			pool = solveSequence(input, stackedOjama = input.me.ojama / 10, timekeeper); // 再計算する
-			});
-		
-		this_thread::sleep_for(chrono::milliseconds(TimeLimit)); // 待つ。
-		timekeeper = false; // 通知。
-		th.join(); // 通知後、完了を待つ。
+		stackedOjama = input.me.ojama / 10;
 
-        reverse(ALL(pool));
+		// commandPoolを再構築する
+		clog << "!reconstruct commands" << endl;
+		auto pair = generateCommandPool(input);
+		bestCommandScore = pair.first;
+		commandPool = move(pair.second);
     }
+	else {
+		// リストが空になっていなくても、改善していたら置き換える
 
-	// お邪魔を計算
+		if (nearlyEqual(input, savedInput) &&
+			bestCommandScore < suggestedCommandScore) {
+			clog << "!replace commands" << endl;
+			commandPool = suggestedCommandPool;
+			bestCommandScore = suggestedCommandScore;
+		}
+	}
+
 	if (stackedOjama > 0) --stackedOjama;
 
-	// コマンドのリストを実行する
-    if (!pool.empty()) {
-        auto c = pool.back();
-        pool.pop_back();
+    if (!commandPool.empty()) {
+		// コマンドのリストを実行する
+        auto c = commandPool.back();
+		commandPool.pop_back();
+
+		setPredicatedNextInput(input, c);
+
         return c;
     }
+
+
 	// あかん
     cerr << "No commands" << endl;
     return Command::Skill;
 }
 
 
-void BattleAI::background(int turncount, const atomic_bool& isfinished) {
+//
+
+
+void BattleAI::background(const atomic_bool& timekeeper) {
 	// 最初は待ち時間が無いはず
-	if (turncount == 0) {
+	if (savedInput.turn == 0) {
 		return;
 	}
 
+	// 探索面数が少ない
+	if (lastMilestoneIdxBegin <= savedInput.turn) return;
 
+	// 探索
+	auto p = solveSequence(savedInput, savedInput.me.ojama / 10, timekeeper,
+		savedInput.me.skillable(), lastMilestoneIdxBegin, lastMilestoneIdxEnd, lastMilestoneIdxEnd - savedInput.turn + 1); // 再計算する
+	auto score = p.first;
+	auto pool = move(p.second);
+	reverse(ALL(pool));
+
+	// 候補として挙げておく
+	suggestedCommandScore = score;
+	suggestedCommandPool = pool;
 }
