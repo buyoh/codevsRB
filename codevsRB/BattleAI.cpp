@@ -120,7 +120,7 @@ static const int MaxDepth = 12;
 // 探索に割り当てるスレッド数（MainThreadも含めるとNumOfThreadsを超える）
 static const int NumOfThreads = 12;
 // 探索に割り当てる時間
-static const int TimeLimit = 7500;
+static const int TimeLimit = 10000;
 // 評価に使うパックの個数
 // static const int MilestoneIdxRange = 3;
 
