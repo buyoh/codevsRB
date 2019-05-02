@@ -18,19 +18,22 @@ using namespace Game;
 struct SearchState {
     Field field;
     vector<Command> commands;
-    int score;
-    int heuristic;
-    // int skill;
+    //int16_t score;
+	int16_t heuristic;
+	int16_t skill;
     
     inline bool operator<(const SearchState& ss) const noexcept {
         return heuristic < ss.heuristic;
     }
 
+	inline bool skillable() const noexcept { return skill >= SkillIncrement; }
+
     inline void swap(SearchState& ss) {
         field.swap(ss.field);
         commands.swap(ss.commands);
-        std::swap(score, ss.score);
+        //std::swap(score, ss.score);
         std::swap(heuristic, ss.heuristic);
+		std::swap(skill, ss.skill);
     }
 };
 
@@ -94,19 +97,19 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
 
 // ticket #14 1つの数字ブロックを落としてスコア計算？
 // 試験実装
-static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
-    int best = 0;
-    repeat(x, W) {
-        int y1 = 0;
-        while (y1 < H - 1 && field(y1, x) != None) ++y1;
-        for (int8_t v = 1; v <= 9; v += 1) {
-            Field f = field;
-            f(y1, x) = v;
-            chmax(best, ChainScore[f.chain().first]);
-        }
-    }
-    return best;
-}
+// static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
+//     int best = 0;
+//     repeat(x, W) {
+//         int y1 = 0;
+//         while (y1 < H - 1 && field(y1, x) != None) ++y1;
+//         for (int8_t v = 1; v <= 9; v += 1) {
+//             Field f = field;
+//             f(y1, x) = v;
+//             chmax(best, ChainScore[f.chain().first]);
+//         }
+//     }
+//     return best;
+// }
 
 
 //
@@ -119,8 +122,11 @@ static const int NumOfThreads = 12;
 // 探索に割り当てる時間
 static const int TimeLimit = 7500;
 // 評価に使うパックの個数
-static const int milestoneIdxRange = 3;
+// static const int MilestoneIdxRange = 3;
 
+static const int MilestoneIdxBegin = MaxDepth - 3;
+static const int MilestoneIdxBeginWide = 4;
+static const int MilestoneIdxEnd = MaxDepth;
 
 //
 
@@ -133,9 +139,9 @@ static PriorityQueue<SearchState> stackedStates[MaxDepth + 1];
 static Input savedInput;
 
 
-static int lastMilestoneIdxBegin = MaxDepth - milestoneIdxRange;
-static int lastMilestoneIdxEnd = MaxDepth;
-static int lastPredictedScore = 0;
+static int lastMilestoneIdxBegin = MilestoneIdxBegin;
+static int lastMilestoneIdxEnd = MilestoneIdxEnd;
+// static int lastPredictedScore = 0;
 
 //
 
@@ -146,7 +152,7 @@ static Tag<int, vector<Command>> solveSequence(
 	const bool enableSkill, const int milestoneIdxBegin, const int milestoneIdxEnd, const int maxDepth) {
 	// timekeeper: trueの間だけ実行
 
-    cerr << "solve: " << input.turn << " ";
+    cerr << "solve: " << input.turn << endl;
 
 	// 初期化
 	for (auto& ss : stackedStates) ss.clear(), ss.reserve(100000);
@@ -163,14 +169,15 @@ static Tag<int, vector<Command>> solveSequence(
 			auto pack = packs[input.turn].rotated(r);
 			repeat(x, W - 1) {
 				Command cmd(x, r);
-				SearchState ss{ field, vector<Command>{cmd}, 0, 0 };
+				SearchState ss{ field, vector<Command>{cmd}, 0, input.me.skill };
 			
 				ss.field.insert(pack, x); // 置く
 				int score = ChainScore[ss.field.chain().first];
 				if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
 				int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-				ss.score = score;
+				// ss.score = score;
 				ss.heuristic = heuristic;
+				ss.skill += (score > 0) * SkillIncrement;
 
 				chmax(best, decltype(best)(score, ss.commands));
 
@@ -179,18 +186,19 @@ static Tag<int, vector<Command>> solveSequence(
 		}
 		// スキルが発動可能ならば入れる．
 		// スキルゲージを稼ぎつつ積み上げることは難しいので，連鎖とスキルは共存出来ない。
-		if (enableSkill) {
+		if (enableSkill && input.me.skillable()) {
 			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0 };
 
 			int bombcnt = ss.field.explode(); ss.field.fall();
 			int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 			int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-			ss.score = skillscore;
+			// ss.score = skillscore;
 			ss.heuristic = heuristic;
 
 			chmax(best, decltype(best)(skillscore, ss.commands));
 
-			// stackedStates[0].push(move(ss)); // pushしない(実装する場合、スキルゲージの消耗を考慮しないとダメ)
+			// stackedStates[0].push(move(ss));
+			// pushしない。スキル使用は発火なので、探索する意味があるか？
 		}
 	}
 
@@ -222,29 +230,34 @@ static Tag<int, vector<Command>> solveSequence(
 			int localLoopcount = 0;
 
 			while (timekeeper) {
+				// 何もしなかったら時間にかかわらず終了するフラグ
 				bool noAction = true;
 
 				repeat(depth, maxDepth) {
 					// 扱うSearchStateを取得
 					{
 						// 排他ロック
+						// スタックから状態を取り出す
 						if (stackedStates[depth].empty()) continue;
 						currss = move(stackedStates[depth].top());
 						stackedStates[depth].pop();
 						mtx.unlock();
-						noAction = false;
 					}
+					noAction = false;
 
 					// ojamaを降らせる
 					if (stackedOjama > depth + 1) currss.field.stackOjama();
 
+					// 今のターン
+					int currentTurn = input.turn + depth + 1;
+
 					// 回転済みパック
 					// ヒープではないので、この確保はスレッドセーフ。
 					array<Pack, 4> rotatedPack = {
-						packs[input.turn + depth + 1],
-						packs[input.turn + depth + 1].rotated(1),
-						packs[input.turn + depth + 1].rotated(2),
-						packs[input.turn + depth + 1].rotated(3)
+						packs[currentTurn],
+						packs[currentTurn].rotated(1),
+						packs[currentTurn].rotated(2),
+						packs[currentTurn].rotated(3)
 					};
 
 					Tag<int, Command> localBest(-1, 0);
@@ -260,26 +273,27 @@ static Tag<int, vector<Command>> solveSequence(
 							ss.field.insert(rotatedPack[r], x);
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
-							int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd, tempField);
+							int heuristic = calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField);
 
 							// ss.commands.push_back(Command(x, r)); // 非推奨。排他ロックのスコープでpushする
 
 							ss.heuristic = heuristic;
-							// ss.skill += (ss.score > 0 ? 8 : 0);
+							ss.skill += (chainscore > 0) * SkillIncrement;
 
 							chmax(localBest, decltype(localBest)(chainscore, Command(x, r)));
 						}
 					}
-					if (enableSkill) {
+					if (enableSkill && currss.skillable()) {
 						ssStockerSkl = currss;
 						SearchState& ss = ssStockerSkl;
 
 						int bombcnt = ss.field.explode(); ss.field.fall();
 						int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 						if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
-						int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd, tempField);
-						ss.score = skillscore;
+						int heuristic = calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField);
+						// ss.score = skillscore;
 						ss.heuristic = heuristic;
+						ss.skill = 0;
 
 						chmax(localBest, decltype(localBest)(skillscore, Command::Skill));
 					}
@@ -307,6 +321,7 @@ static Tag<int, vector<Command>> solveSequence(
 							if (Command::Skill == localBest.second && localBest.first > best.first)
 								best = Tag<int, vector<Command>>(localBest.first, ssStockerSkl.commands);
 							// stackedStates[depth + 1].push(ssStockerSkl); // pushしない(実装する場合、スキルゲージの消耗を考慮しないとダメ)
+							// pushしない。スキル使用は発火なので、探索する意味があるか？
 						}
 
 					}
@@ -352,11 +367,6 @@ static Tag<int, vector<Command>> solveSequence(
 			abort();
 		}
 	}
-
-	// 後処理
-	lastMilestoneIdxBegin = milestoneIdxBegin;
-	lastMilestoneIdxEnd = milestoneIdxEnd;
-	lastPredictedScore = best.first;
 
     return best;
 }
@@ -411,10 +421,10 @@ static void setPredicatedNextInput(const Input& currentInput, Command myCommand)
 //
 
 
-static Tag<int, vector<Command>> generateCommandPool(const Input& input) {
+static Tag<int, vector<Command>> generateCommandPool(const Input& input, int mib, int mie) {
 	// 評価に使うパックのindex
-	const int milestoneIdxBegin = input.turn + MaxDepth - milestoneIdxRange;
-	const int milestoneIdxEnd = input.turn + MaxDepth;
+	const int milestoneIdxBegin = input.turn + mib;
+	const int milestoneIdxEnd = input.turn + mie;
 	// スキルコマンドも探索するか？
 	const bool enableSkill = input.me.skillable();
 
@@ -429,6 +439,10 @@ static Tag<int, vector<Command>> generateCommandPool(const Input& input) {
 	this_thread::sleep_for(chrono::milliseconds(TimeLimit)); // 待つ。
 	timekeeper = false; // 通知。
 	th.join(); // 通知後、完了を待つ。
+
+	// 後処理
+	lastMilestoneIdxBegin = milestoneIdxBegin;
+	lastMilestoneIdxEnd = milestoneIdxEnd;
 
 	reverse(ALL(result.second));
 	return move(result);
@@ -470,18 +484,28 @@ Command BattleAI::loop(const Input& input, const Pack& turnPack) {
 
 	static int stackedOjama = 0;
 
-    if (commandPool.empty() || // リストが空になった
-        input.me.ojama/10 != stackedOjama || // お邪魔の数が一致していない(savedInputを使うと、中途半端な連鎖の予測によって毎回再構築が発生するのでダメ)
-        (commandPool.back().skill() && !input.me.skillable())) { // スキルを使うコマンドだが使えない
-
+	// リストが空になった
+    if (commandPool.empty()) { // スキルを使うコマンドだが使えない
 		stackedOjama = input.me.ojama / 10;
 
 		// commandPoolを再構築する
 		clog << "!reconstruct commands" << endl;
-		auto pair = generateCommandPool(input);
+		auto pair = generateCommandPool(input, MilestoneIdxBegin, MilestoneIdxEnd);
 		bestCommandScore = pair.first;
 		commandPool = move(pair.second);
     }
+	// お邪魔の数が一致していない(savedInputを使うと、中途半端な連鎖の予測によって毎回再構築が発生するのでダメ)
+	// スキルを使うコマンドだが使えない
+	else if (input.me.ojama / 10 != stackedOjama || 
+		(commandPool.back().skill() && !input.me.skillable())) { 
+		stackedOjama = input.me.ojama / 10;
+
+		// commandPoolを再構築する
+		clog << "!reconstruct commands(Wide)" << endl;
+		auto pair = generateCommandPool(input, MilestoneIdxBeginWide, MilestoneIdxEnd);
+		bestCommandScore = pair.first;
+		commandPool = move(pair.second);
+	}
 	else {
 		// リストが空になっていなくても、改善していたら置き換える
 
@@ -526,7 +550,7 @@ void BattleAI::background(const atomic_bool& timekeeper) {
 
 	// 探索
 	auto p = solveSequence(savedInput, savedInput.me.ojama / 10, timekeeper,
-		savedInput.me.skillable(), lastMilestoneIdxBegin, lastMilestoneIdxEnd, lastMilestoneIdxEnd - savedInput.turn + 1); // 再計算する
+		savedInput.me.skillable(), lastMilestoneIdxBegin, lastMilestoneIdxEnd, lastMilestoneIdxEnd - savedInput.turn); // 再計算する
 	auto score = p.first;
 	auto pool = move(p.second);
 	reverse(ALL(pool));
