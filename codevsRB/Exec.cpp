@@ -25,7 +25,7 @@ void execAI(istream& fin, ostream& fout) {
 
 	while (true) {
 		Game::Input input;
-		atomic_bool timekeeper = true;
+		atomic_bool timekeeper(true);
 		auto t2 = thread([&ai, &timekeeper]() { ai.background(timekeeper); });
 		input.input(fin);
 		timekeeper = false;
