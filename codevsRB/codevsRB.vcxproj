@@ -322,6 +322,7 @@
     <ClInclude Include="Score.h" />
     <ClInclude Include="Time.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="XorShift.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

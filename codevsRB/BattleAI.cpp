@@ -6,6 +6,7 @@
 #include "Time.h"
 #include "Score.h"
 #include "PriorityQueue.h"
+#include "XorShift.h"
 
 #include "Exec.h"
 
@@ -79,6 +80,7 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
 			auto pack = packs[mpi].rotated(r);
 			repeat(i, W - 1) {
 				tempField = field;
+				tempField.stackOjama();
 				tempField.insert(pack, i);
 				chmax(best, ChainScore[tempField.chain().first]);
 			}
@@ -121,12 +123,15 @@ static const int MaxDepth = 12;
 static const int NumOfThreads = 12;
 // 探索に割り当てる時間
 static const int TimeLimit = 10000;
+static const int FirstTimeLimit = 18000;
 // 評価に使うパックの個数
 // static const int MilestoneIdxRange = 3;
 
 static const int MilestoneIdxBegin = MaxDepth - 3;
 static const int MilestoneIdxBeginWide = 4;
 static const int MilestoneIdxEnd = MaxDepth;
+
+static const int ThresholdBreakScore = 20; // このスコア以上の連鎖が発生したらそれ以降の探索を行わない
 
 //
 
@@ -181,7 +186,8 @@ static Tag<int, vector<Command>> solveSequence(
 
 				chmax(best, decltype(best)(score, ss.commands));
 
-				stackedStates[0].push(move(ss));
+				if (score < ThresholdBreakScore)
+					stackedStates[0].push(move(ss));
 			}
 		}
 		// スキルが発動可能ならば入れる．
@@ -202,8 +208,6 @@ static Tag<int, vector<Command>> solveSequence(
 		}
 	}
 
-    int loopcount = 0;
-
     // 時間が許す限り探索する
 	{
 		// マルチスレッドによる探索
@@ -214,12 +218,16 @@ static Tag<int, vector<Command>> solveSequence(
 
 		const int numOfThreads = execOptions.enableMultiThread ? NumOfThreads : 1;
 
+		mt19937_64 seedGen;
+
 		repeat(_, numOfThreads) threads.emplace_back(
 			[
-				&input, &timekeeper, &mtx, &best, &loopcount, 
+				&input, &timekeeper, &mtx, &best, 
 				stackedOjama, milestoneIdxBegin, milestoneIdxEnd, maxDepth, enableSkill
-			]() {
+			](mt19937_64::result_type seed) {
 			// memo: スレッドセーフであること！
+
+			XorShift randdev(seed);
 
 			// 排他ロック
 			mtx.lock();
@@ -227,7 +235,6 @@ static Tag<int, vector<Command>> solveSequence(
 			bool ok[W][4], okSkl;
 			SearchState currss; // stackedStatesから取り出したもの。
 			Field tempField; // calcHeuristic用
-			int localLoopcount = 0;
 
 			while (timekeeper) {
 				// 何もしなかったら時間にかかわらず終了するフラグ
@@ -273,14 +280,21 @@ static Tag<int, vector<Command>> solveSequence(
 							ss.field.insert(rotatedPack[r], x);
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
-							int heuristic = calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField);
 
-							// ss.commands.push_back(Command(x, r)); // 非推奨。排他ロックのスコープでpushする
-
-							ss.heuristic = heuristic;
-							ss.skill += (chainscore > 0) * SkillIncrement;
-
+							// localBest更新
 							chmax(localBest, decltype(localBest)(chainscore, Command(x, r)));
+
+							// 続いて探索する価値がある(連鎖が終了した後でない)
+							if (chainscore < ThresholdBreakScore) {
+								int heuristic
+									= (calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField) << 8) | (randdev()&0xFF);
+								ss.heuristic = heuristic;
+								ss.skill += (chainscore > 0) * SkillIncrement;
+							}
+							else {
+								ok[x][r] = false;
+							}
+								
 						}
 					}
 					if (enableSkill && currss.skillable()) {
@@ -290,9 +304,10 @@ static Tag<int, vector<Command>> solveSequence(
 						int bombcnt = ss.field.explode(); ss.field.fall();
 						int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 						if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
-						int heuristic = calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField);
+						// int heuristic
+						//	= (calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField) << 8) | (randdev() & 0xFF);
 						// ss.score = skillscore;
-						ss.heuristic = heuristic;
+						// ss.heuristic = heuristic;
 						ss.skill = 0;
 
 						chmax(localBest, decltype(localBest)(skillscore, Command::Skill));
@@ -303,14 +318,16 @@ static Tag<int, vector<Command>> solveSequence(
 
 						repeat(x, W - 1) {
 							repeat(r, 4) {
-								// 失敗したコマンドは何もしない
-								if (!ok[x][r]) continue;
 								// ここでコマンドを追加する(allocateの発生)
 								ssStocker[x][r].commands.push_back(Command(x, r));
 
 								// 最良のコマンドならば、更新する
 								if (localBest.first > best.first && Command(x, r) == localBest.second)
 									best = Tag<int, vector<Command>>(localBest.first, ssStocker[x][r].commands);
+
+								// 失敗したコマンドはqueueに追加しない
+								if (!ok[x][r]) continue;
+
 								// queueに追加
 								stackedStates[depth + 1].push(ssStocker[x][r]);
 							}
@@ -326,29 +343,24 @@ static Tag<int, vector<Command>> solveSequence(
 
 					}
 				}
-				++localLoopcount;
 				if (noAction) break;
 			}
 
 			// 排他ロック
-			loopcount += localLoopcount;
 			mtx.unlock();
 
 
-			});
+			}, seedGen());
 		for (auto& t : threads) t.join();
 	}
 
 	// output logs
-    clog << "loop:" << loopcount << ", best:" << best.first << "\n";
-    repeat(depth, maxDepth + 1) {
-        clog << stackedStates[depth].size() << "\n";
-    }
+	int stateSize = 0;
+	repeat(depth, maxDepth + 1) stateSize += stackedStates[depth].size();
+    clog << "score: " << best.first << ", statesize: " << stateSize << '\n';
 
-	for (auto cmd : best.second) {
-		clog << cmd << "\n";
-	}
-	clog << "cmd.size = " << best.second.size() << endl;
+	// for (auto cmd : best.second) clog << cmd << "\n";
+	clog << "cmd.length = " << best.second.size() << endl;
 
 	// check commands
 	if (execOptions.checkOutputCommands) {
@@ -436,7 +448,7 @@ static Tag<int, vector<Command>> generateCommandPool(const Input& input, int mib
 			enableSkill, milestoneIdxBegin, milestoneIdxEnd, MaxDepth); // 再計算する
 		});
 
-	this_thread::sleep_for(chrono::milliseconds(TimeLimit)); // 待つ。
+	this_thread::sleep_for(chrono::milliseconds(input.turn < 5 ? FirstTimeLimit : TimeLimit)); // 待つ。
 	timekeeper = false; // 通知。
 	th.join(); // 通知後、完了を待つ。
 
