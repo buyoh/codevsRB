@@ -48,6 +48,35 @@ static decltype(FirstInput::packs) packs;
 
 //
 
+// #define EnableAnalysis
+#ifdef EnableAnalysis
+
+namespace Ana {
+	namespace He {
+		static int cnt[20][W][4];
+		inline void reset() {
+			if (execOptions.enableMultiThread)
+				cerr << "Warning: EnableAnalysis is unsafe" << endl;
+			fill(cnt[0][0], cnt[20][W], 0);
+		}
+		inline void add(int i, int j, int k) {
+			++cnt[i][j][k];
+		}
+		inline void dump() {
+			priority_queue<array<int, 4>> pq;
+			repeat(i, 20) repeat(j, W) repeat(k, 4) pq.push({ cnt[i][j][k], i,j,k });
+			clog << "heuristic report:\n";
+			repeat(i, 10) {
+				const auto& a = pq.top();
+				clog << a[0] << ':' << a[1] << ' ' << a[2] << ' ' << a[3] << '\n';
+				pq.pop();
+			}
+		}
+	}
+}
+
+#endif
+
 
 // ojamaが積もったか？
 // 予めfallされていること
@@ -82,7 +111,11 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
 				tempField = field;
 				tempField.stackOjama();
 				tempField.insert(pack, i);
-				chmax(best, ChainScore[tempField.chain().first]);
+				const int cs = ChainScore[tempField.chain().first];
+				chmax(best, cs);
+#ifdef EnableAnalysis
+				if (cs >= 20) Ana::He::add(milestonePackIndexEnd - mpi, r, i);
+#endif
 			}
 		}
 	}
@@ -97,21 +130,46 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
     return calcHeuristic(field, milestonePackIndexBegin, milestonePackIndexEnd, f);
 }
 
-// ticket #14 1つの数字ブロックを落としてスコア計算？
-// 試験実装
-// static inline int calcHeuristic_one(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd) {
-//     int best = 0;
-//     repeat(x, W) {
-//         int y1 = 0;
-//         while (y1 < H - 1 && field(y1, x) != None) ++y1;
-//         for (int8_t v = 1; v <= 9; v += 1) {
-//             Field f = field;
-//             f(y1, x) = v;
-//             chmax(best, ChainScore[f.chain().first]);
-//         }
-//     }
-//     return best;
-// }
+
+
+static int calcReducedHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd, Field& tempField, array<array<int, 3>, 4>& memo) {
+	int best = 0;
+	if (memo.back()[0] < 0) {
+		iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd) {
+			repeat(r, 4) {
+				auto pack = packs[mpi].rotated(r);
+				repeat(i, W - 1) {
+					tempField = field;
+					//tempField.stackOjama();
+					tempField.insert(pack, i);
+					const int cs = ChainScore[tempField.chain().first];
+					chmax(best, cs);
+					if (cs >= 19) {
+						for (auto& a : memo)
+							if (a[0] < 0) {
+								a[0] = mpi; a[1] = r; a[2] = i;
+								break;
+							}
+							else if (a[0] == mpi && a[1] == r && a[2] == i)
+								break;
+					}
+				}
+			}
+		}
+	}
+	else {
+		for (auto& a : memo) {
+			auto pack = packs[a[0]].rotated(a[1]);
+			tempField = field;
+			//tempField.stackOjama();
+			tempField.insert(pack, a[2]);
+			const int cs = ChainScore[tempField.chain().first];
+			chmax(best, cs);
+		}
+	}
+
+	return best;
+}
 
 
 //
@@ -158,6 +216,10 @@ static Tag<int, vector<Command>> solveSequence(
 	// timekeeper: trueの間だけ実行
 
     cerr << "solve: " << input.turn << endl;
+
+#ifdef EnableAnalysis
+	Ana::He::reset();
+#endif
 
 	// 初期化
 	for (auto& ss : stackedStates) ss.clear(), ss.reserve(100000);
@@ -235,6 +297,9 @@ static Tag<int, vector<Command>> solveSequence(
 			bool ok[W][4], okSkl;
 			SearchState currss; // stackedStatesから取り出したもの。
 			Field tempField; // calcHeuristic用
+			array<array<int, 3>, 4> heuristicmemo; // calcHeuristic用
+
+			array<Pack, 4> rotatedPack;
 
 			while (timekeeper) {
 				// 何もしなかったら時間にかかわらず終了するフラグ
@@ -260,7 +325,7 @@ static Tag<int, vector<Command>> solveSequence(
 
 					// 回転済みパック
 					// ヒープではないので、この確保はスレッドセーフ。
-					array<Pack, 4> rotatedPack = {
+					rotatedPack = {
 						packs[currentTurn],
 						packs[currentTurn].rotated(1),
 						packs[currentTurn].rotated(2),
@@ -269,6 +334,7 @@ static Tag<int, vector<Command>> solveSequence(
 
 					Tag<int, Command> localBest(-1, 0);
 					repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
+					repeat(i, 4) repeat(j, 3) heuristicmemo[i][j] = -1;
 					okSkl = enableSkill;
 
 					// コマンド探索
@@ -287,7 +353,7 @@ static Tag<int, vector<Command>> solveSequence(
 							// 続いて探索する価値がある(連鎖が終了した後でない)
 							if (chainscore < ThresholdBreakScore) {
 								int heuristic
-									= (calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField) << 8) | (randdev()&0xFF);
+									= (calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo) << 8) | (randdev()&0xFF);
 								ss.heuristic = heuristic;
 								ss.skill += (chainscore > 0) * SkillIncrement;
 							}
@@ -379,6 +445,9 @@ static Tag<int, vector<Command>> solveSequence(
 			abort();
 		}
 	}
+#ifdef EnableAnalysis
+	Ana::He::dump();
+#endif
 
     return best;
 }
