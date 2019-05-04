@@ -170,10 +170,23 @@ void selfExecution() {
 
     Game::Input input; Generator::setDefaultInput(input);
 
-    repeat(turn, 150) {
+	vector<int> scores;
+
+    repeat(turn, 200) {
+		int score = input.me.score;
         auto cmd = ai.loop(input, firstinput.packs[turn]);
-        input.apply(cmd, Game::Command(0, 0), firstinput.packs[turn]);
+        bool ok = input.apply(cmd, Game::Command(0, 0), firstinput.packs[turn]);
+
+		if (!ok) {
+			for (auto s : scores) cout << s << '\n';
+			cout << -turn << endl;
+			break;
+		}
+
+		score = input.me.score - score;
+		scores.push_back(score);
 
         Generator::setDefaultPlayer(input.en);
+		if (turn % 12 == 11) input.me.ojama += turn - 3;
     }
 }
