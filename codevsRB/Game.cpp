@@ -260,4 +260,11 @@ namespace Game {
         }
     }
 
+
+	int Field::countWithountOjama() const {
+		int k = 0;
+		repeat(i, W * H) k += 1 <= data_[i] && data_[i] <= 9;
+		return k;
+	}
+
 }

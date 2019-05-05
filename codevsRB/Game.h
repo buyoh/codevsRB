@@ -186,6 +186,9 @@ namespace Game {
         // @return
         void stackOjama();
 
+		// 
+		int countWithountOjama() const;
+
         // fall->eliminateを繰り返す
         // 事前にfallされていること
         // @return <count of chain, HLimitを超えたか？>

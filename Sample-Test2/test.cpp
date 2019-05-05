@@ -42,6 +42,18 @@ TEST(FieldTest, FallenPack) {
     EXPECT_EQ(field(0, 1), 3);
     EXPECT_EQ(field(1, 1), 4);
 	EXPECT_EQ(field.getHighest(), 2);
+	EXPECT_EQ(field.countWithountOjama(), 4);
+}
+
+TEST(FieldTest, Count) {
+	using namespace Game;
+	Pack pack1 = { 1,2,4,3 };
+	Pack pack2 = { Ojama, Ojama, Ojama, Ojama };
+	Field field;
+	field.insert(pack1, 0);
+	EXPECT_EQ(field.countWithountOjama(), 4);
+	field.insert(pack2, 0);
+	EXPECT_EQ(field.countWithountOjama(), 4);
 }
 
 TEST(FieldTest, ChainHorizontal) {
@@ -184,6 +196,7 @@ TEST(FieldTest, OverflowField) {
 		EXPECT_EQ(ok, ok2);
         height += 1;
 		EXPECT_EQ(field.getHighest(), height);
+		EXPECT_EQ(field.countWithountOjama(), height*2);
         if (height > HLimit) {
             EXPECT_FALSE(ok) << "fall will fail H=" << height;
             break;
