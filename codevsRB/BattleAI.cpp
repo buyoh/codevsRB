@@ -19,9 +19,9 @@ using namespace Game;
 struct SearchState {
     Field field;
     vector<Command> commands;
-    //int16_t score;
 	int16_t heuristic;
 	int16_t skill;
+    int16_t exploded;
     
     inline bool operator<(const SearchState& ss) const noexcept {
         return heuristic < ss.heuristic;
@@ -189,7 +189,12 @@ static const int MilestoneIdxBegin = MaxDepth - 3;
 static const int MilestoneIdxBeginWide = 4;
 static const int MilestoneIdxEnd = MaxDepth;
 
-static const int ThresholdBreakScore = 20; // このスコア以上の連鎖が発生したらそれ以降の探索を行わない
+// このスコア以上の連鎖が発生したらそれ以降の探索を行わない
+static const int ThresholdBreakScore = 20; 
+// このスコア以上は無意味とみなす
+static const int SaturatedScore = 60;
+static const int SaturatedExplode = 10;
+
 
 //
 
@@ -204,13 +209,20 @@ static Input savedInput;
 
 static int lastMilestoneIdxBegin = MilestoneIdxBegin;
 static int lastMilestoneIdxEnd = MilestoneIdxEnd;
-// static int lastPredictedScore = 0;
+
 
 //
 
 
-inline int evaluateScore(int score, int remainTurn, int cntBlock) noexcept {
-	return (min(100, score) + score / 60 + remainTurn)*5 - cntBlock;
+// score: そのターンで獲得したスコア
+// remainTurn: DepthTurn - turn
+// exploded: これまでにボムで破壊したブロックの個数
+inline int evaluateScore(int score, int remainTurn, int exploded) noexcept {
+	return ((min(SaturatedScore, score) + remainTurn + min(SaturatedExplode, exploded)*6) << 10) + score;
+}
+
+inline int evaluateHeuristic(int h, int exploded, uint64_t seed) noexcept {
+    return ((h) << 8) | (seed & 0xFF); // 結局explodedは入れていない
 }
 
 
@@ -241,18 +253,18 @@ static Tag<int, vector<Command>> solveSequence(
 			auto pack = packs[input.turn].rotated(r);
 			repeat(x, W - 1) {
 				Command cmd(x, r);
-				SearchState ss{ field, vector<Command>{cmd}, 0, input.me.skill };
+				SearchState ss{ field, vector<Command>{cmd}, 0, input.me.skill, 0 };
 			
 				ss.field.insert(pack, x); // 置く
 				int score = ChainScore[ss.field.chain().first];
 				if (ss.field.isOverFlow()) continue; // オーバーフローしたら無効
-				int cntblock = ss.field.countWithountOjama();
+				// int cntblock = ss.field.countWithountOjama();
 				int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
 				// ss.score = score;
 				ss.heuristic = heuristic;
 				ss.skill += (score > 0) * SkillIncrement;
 
-				chmax(best, decltype(best)(evaluateScore(score, maxDepth + 1, cntblock), ss.commands));
+				chmax(best, decltype(best)(evaluateScore(score, maxDepth + 1, 0), ss.commands));
 
 				if (score < ThresholdBreakScore)
 					stackedStates[0].push(move(ss));
@@ -261,19 +273,19 @@ static Tag<int, vector<Command>> solveSequence(
 		// スキルが発動可能ならば入れる．
 		// スキルゲージを稼ぎつつ積み上げることは難しいので，連鎖とスキルは共存出来ない。
 		if (enableSkill && input.me.skillable()) {
-			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0 };
+			SearchState ss{ field, vector<Command>{Command::Skill}, 0, 0, 0 };
 
 			int bombcnt = ss.field.explode(); ss.field.fall();
 			int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 			int heuristic = calcHeuristic(ss.field, milestoneIdxBegin, milestoneIdxEnd);
-			int cntblock = ss.field.countWithountOjama();
+			// int cntblock = ss.field.countWithountOjama();
 			// ss.score = skillscore;
 			ss.heuristic = heuristic;
+            ss.exploded += bombcnt;
 
-			chmax(best, decltype(best)(evaluateScore(skillscore, maxDepth + 1, cntblock), ss.commands));
+			chmax(best, decltype(best)(evaluateScore(skillscore, maxDepth + 1, ss.exploded), ss.commands));
 
-			// stackedStates[0].push(move(ss));
-			// pushしない。スキル使用は発火なので、探索する意味があるか？
+			stackedStates[0].push(move(ss));
 		}
 	}
 
@@ -353,15 +365,18 @@ static Tag<int, vector<Command>> solveSequence(
 							ss.field.insert(rotatedPack[r], x);
 							int chainscore = ChainScore[ss.field.chain().first];
 							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
-							int cntblock = ss.field.countWithountOjama();
+							// int cntblock = ss.field.countWithountOjama();
 
 							// localBest更新
-							chmax(localBest, decltype(localBest)(evaluateScore(chainscore, maxDepth - depth, cntblock), Command(x, r)));
+							chmax(localBest, decltype(localBest)(evaluateScore(chainscore, maxDepth - depth, ss.exploded), Command(x, r)));
 
 							// 続いて探索する価値がある(連鎖が終了した後でない)
 							if (chainscore < ThresholdBreakScore) {
-								int heuristic
-									= (calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo) << 8) | (randdev()&0xFF);
+								int heuristic = evaluateHeuristic(
+                                    calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
+                                    ss.exploded, 
+                                    randdev()
+                                );
 								ss.heuristic = heuristic;
 								ss.skill += (chainscore > 0) * SkillIncrement;
 							}
@@ -371,21 +386,24 @@ static Tag<int, vector<Command>> solveSequence(
 								
 						}
 					}
-					if (enableSkill && currss.skillable()) {
+                    if (enableSkill && currss.skillable()) {
 						ssStockerSkl = currss;
 						SearchState& ss = ssStockerSkl;
 
 						int bombcnt = ss.field.explode(); ss.field.fall();
 						int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
 						if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
-						int cntblock = ss.field.countWithountOjama();
-						// int heuristic
-						//	= (calcHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField) << 8) | (randdev() & 0xFF);
-						// ss.score = skillscore;
-						// ss.heuristic = heuristic;
+						// int cntblock = ss.field.countWithountOjama();
+                        int heuristic = evaluateHeuristic(
+                            calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
+                            bombcnt,
+                            randdev()
+                        );
+						ss.heuristic = heuristic;
 						ss.skill = 0;
+                        ss.exploded += bombcnt;
 
-						chmax(localBest, decltype(localBest)(evaluateScore(skillscore, maxDepth - depth, cntblock), Command::Skill));
+						chmax(localBest, decltype(localBest)(evaluateScore(skillscore, maxDepth - depth, ss.exploded), Command::Skill));
 					}
 					{
 						// 排他ロック
@@ -412,8 +430,7 @@ static Tag<int, vector<Command>> solveSequence(
 							ssStockerSkl.commands.push_back(Command::Skill);
 							if (Command::Skill == localBest.second && localBest.first > best.first)
 								best = Tag<int, vector<Command>>(localBest.first, ssStockerSkl.commands);
-							// stackedStates[depth + 1].push(ssStockerSkl); // pushしない(実装する場合、スキルゲージの消耗を考慮しないとダメ)
-							// pushしない。スキル使用は発火なので、探索する意味があるか？
+							stackedStates[depth + 1].push(ssStockerSkl);
 						}
 
 					}
@@ -428,6 +445,7 @@ static Tag<int, vector<Command>> solveSequence(
 			}, seedGen());
 		for (auto& t : threads) t.join();
 	}
+
 
 	// output logs
 	int stateSize = 0;
