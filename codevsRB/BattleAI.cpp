@@ -109,7 +109,7 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
 			auto pack = packs[mpi].rotated(r);
 			repeat(i, W - 1) {
 				tempField = field;
-				tempField.stackOjama();
+				// tempField.stackOjama();
 				tempField.insert(pack, i);
 				const int cs = ChainScore[tempField.chain().first];
 				chmax(best, cs);
@@ -252,6 +252,7 @@ static Tag<int, vector<Command>> solveSequence(
 		repeat(r, 4) {
 			auto pack = packs[input.turn].rotated(r);
 			repeat(x, W - 1) {
+                if (input.turn == 0 && x != 3) continue;
 				Command cmd(x, r);
 				SearchState ss{ field, vector<Command>{cmd}, 0, input.me.skill, 0 };
 			
