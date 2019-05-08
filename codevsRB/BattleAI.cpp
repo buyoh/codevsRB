@@ -131,8 +131,9 @@ static inline int calcHeuristic(const Field& field, int milestonePackIndexBegin,
 }
 
 
+const int NumOfHeuristicStack = 8;
 
-static int calcReducedHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd, Field& tempField, array<array<int, 3>, 4>& memo) {
+static int calcReducedHeuristic(const Field& field, int milestonePackIndexBegin, int milestonePackIndexEnd, Field& tempField, array<array<int, 3>, NumOfHeuristicStack>& memo) {
 	int best = 0;
 	if (memo.back()[0] < 0) {
 		iterate(mpi, milestonePackIndexBegin, milestonePackIndexEnd) {
@@ -185,7 +186,7 @@ static const int FirstTimeLimit = 18000;
 // 評価に使うパックの個数
 // static const int MilestoneIdxRange = 3;
 
-static const int MilestoneIdxBegin = MaxDepth - 3;
+static const int MilestoneIdxBegin = MaxDepth - 4;
 static const int MilestoneIdxBeginWide = 4;
 static const int MilestoneIdxEnd = MaxDepth;
 
@@ -252,7 +253,7 @@ static Tag<int, vector<Command>> solveSequence(
 		repeat(r, 4) {
 			auto pack = packs[input.turn].rotated(r);
 			repeat(x, W - 1) {
-                if (input.turn == 0 && x != 3) continue;
+                if (input.turn == 0 && 4 < x) break;
 				Command cmd(x, r);
 				SearchState ss{ field, vector<Command>{cmd}, 0, input.me.skill, 0 };
 			
@@ -317,7 +318,7 @@ static Tag<int, vector<Command>> solveSequence(
 			bool ok[W][4], okSkl;
 			SearchState currss; // stackedStatesから取り出したもの。
 			Field tempField; // calcHeuristic用
-			array<array<int, 3>, 4> heuristicmemo; // calcHeuristic用
+			array<array<int, 3>, NumOfHeuristicStack> heuristicmemo; // calcHeuristic用
 
 			array<Pack, 4> rotatedPack;
 
@@ -354,7 +355,7 @@ static Tag<int, vector<Command>> solveSequence(
 
 					Tag<int, Command> localBest(-1, 0);
 					repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
-					repeat(i, 4) repeat(j, 3) heuristicmemo[i][j] = -1;
+					repeat(i, NumOfHeuristicStack) repeat(j, 3) heuristicmemo[i][j] = -1;
 					okSkl = enableSkill;
 
 					// コマンド探索
