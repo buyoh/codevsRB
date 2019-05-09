@@ -194,7 +194,9 @@ static const int MilestoneIdxEnd = MaxDepth;
 static const int ThresholdBreakScore = 20; 
 // このスコア以上は無意味とみなす
 static const int SaturatedScore = 60;
-static const int SaturatedExplode = 10;
+// static const int SaturatedExplode = 10;
+// このスコア以下は無意味とみなす
+static const int SaturatedExplodeLower = 40;
 
 
 //
@@ -219,7 +221,7 @@ static int lastMilestoneIdxEnd = MilestoneIdxEnd;
 // remainTurn: DepthTurn - turn
 // exploded: これまでにボムで破壊したブロックの個数
 inline int evaluateScore(int score, int remainTurn, int exploded) noexcept {
-	return ((min(SaturatedScore, score) + remainTurn + min(SaturatedExplode, exploded)*6) << 10) + score;
+	return ((min(SaturatedScore, score) + remainTurn + max(0, exploded - SaturatedExplodeLower)) << 10) + score;
 }
 
 inline int evaluateHeuristic(int h, int exploded, uint64_t seed) noexcept {
@@ -403,9 +405,9 @@ static Tag<int, vector<Command>> solveSequence(
                         );
 						ss.heuristic = heuristic;
 						ss.skill = 0;
-                        ss.exploded += bombcnt;
 
 						chmax(localBest, decltype(localBest)(evaluateScore(skillscore, maxDepth - depth, ss.exploded), Command::Skill));
+                        ss.exploded += bombcnt;
 					}
 					{
 						// 排他ロック
