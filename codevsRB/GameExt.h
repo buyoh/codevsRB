@@ -63,5 +63,33 @@ namespace Game {
         }
     };
 
+
+    // compressed field
+    class CField {
+        array<uint64_t, W> data_;
+        CField(const Field& field) :data_() {
+            repeat(x, W) {
+                uint64_t v = 0;
+                repeat(y, 16) 
+                    v |= ((uint64_t)field(y, x) & (uint64_t)15) << (uint64_t)(y*4);
+                data_[x] = v;
+            }
+        }
+        void putField(Field& field) const {
+            repeat(x, W) {
+                repeat(y, 16) {
+                    field(y, x) |= ((uint64_t)(y, x) >> (uint64_t)(y * 4)) & (uint64_t)15;
+                }
+                iterate(y, 16, H) field(y, x) = 0;
+            }
+        }
+        inline Field&& toField() const {
+            Field f;
+            putField(f);
+            return move(f);
+        }
+    };
+    
+
 }
        
