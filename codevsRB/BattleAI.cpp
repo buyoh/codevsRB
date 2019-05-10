@@ -329,114 +329,114 @@ static Tag<int, vector<Command>> solveSequence(
 				bool noAction = true;
 
 				repeat(depth, maxDepth) {
-					// 扱うSearchStateを取得
-					{
-						// 排他ロック
-						// スタックから状態を取り出す
-						if (stackedStates[depth].empty()) continue;
-						currss = move(stackedStates[depth].top());
-						stackedStates[depth].pop();
-						mtx.unlock();
-					}
-					noAction = false;
+                    repeat(beamCount, 20) { // beamWidtrh
+					    // 扱うSearchStateを取得
+					    {
+						    // 排他ロック
+						    // スタックから状態を取り出す
+						    if (stackedStates[depth].empty()) break;
+						    currss = move(stackedStates[depth].top());
+						    stackedStates[depth].pop();
+						    mtx.unlock();
+					    }
+					    noAction = false;
 
-					// ojamaを降らせる
-					if (stackedOjama > depth + 1) currss.field.stackOjama();
+					    // ojamaを降らせる
+					    if (stackedOjama > depth + 1) currss.field.stackOjama();
 
-					// 今のターン
-					int currentTurn = input.turn + depth + 1;
+					    // 今のターン
+					    int currentTurn = input.turn + depth + 1;
 
-					// 回転済みパック
-					// ヒープではないので、この確保はスレッドセーフ。
-					rotatedPack = {
-						packs[currentTurn],
-						packs[currentTurn].rotated(1),
-						packs[currentTurn].rotated(2),
-						packs[currentTurn].rotated(3)
-					};
+					    // 回転済みパック
+					    // ヒープではないので、この確保はスレッドセーフ。
+					    rotatedPack = {
+						    packs[currentTurn],
+						    packs[currentTurn].rotated(1),
+						    packs[currentTurn].rotated(2),
+						    packs[currentTurn].rotated(3)
+					    };
 
-					Tag<int, Command> localBest(-1, 0);
-					repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
-					repeat(i, NumOfHeuristicStack) repeat(j, 3) heuristicmemo[i][j] = -1;
-					okSkl = enableSkill;
+					    Tag<int, Command> localBest(-1, 0);
+					    repeat(x, W - 1) repeat(r, 4) ok[x][r] = true;
+					    repeat(i, NumOfHeuristicStack) repeat(j, 3) heuristicmemo[i][j] = -1;
+					    okSkl = enableSkill;
 
-					// コマンド探索
-					repeat(x, W - 1) {
-						repeat(r, 4) {
-							ssStocker[x][r] = currss;
-							SearchState& ss = ssStocker[x][r];
+					    // コマンド探索
+					    repeat(x, W - 1) {
+						    repeat(r, 4) {
+							    ssStocker[x][r] = currss;
+							    SearchState& ss = ssStocker[x][r];
 
-							ss.field.insert(rotatedPack[r], x);
-							int chainscore = ChainScore[ss.field.chain().first];
-							if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
-							// int cntblock = ss.field.countWithountOjama();
+							    ss.field.insert(rotatedPack[r], x);
+							    int chainscore = ChainScore[ss.field.chain().first];
+							    if (ss.field.isOverFlow()) { ok[x][r] = false; continue; } // オーバーフローしたら無効
+							    // int cntblock = ss.field.countWithountOjama();
 
-							// localBest更新
-							chmax(localBest, decltype(localBest)(evaluateScore(chainscore, maxDepth - depth, ss.exploded), Command(x, r)));
+							    // localBest更新
+							    chmax(localBest, decltype(localBest)(evaluateScore(chainscore, maxDepth - depth, ss.exploded), Command(x, r)));
 
-							// 続いて探索する価値がある(連鎖が終了した後でない)
-							if (chainscore < ThresholdBreakScore) {
-								int heuristic = evaluateHeuristic(
-                                    calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
-                                    ss.exploded, 
-                                    randdev()
-                                );
-								ss.heuristic = heuristic;
-								ss.skill += (chainscore > 0) * SkillIncrement;
-							}
-							else {
-								ok[x][r] = false;
-							}
+							    // 続いて探索する価値がある(連鎖が終了した後でない)
+							    if (chainscore < ThresholdBreakScore) {
+								    int heuristic = evaluateHeuristic(
+                                        calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
+                                        ss.exploded, 
+                                        randdev()
+                                    );
+								    ss.heuristic = heuristic;
+								    ss.skill += (chainscore > 0) * SkillIncrement;
+							    }
+							    else {
+								    ok[x][r] = false;
+							    }
 								
-						}
-					}
-                    if (enableSkill && currss.skillable()) {
-						ssStockerSkl = currss;
-						SearchState& ss = ssStockerSkl;
+						    }
+					    }
+                        if (enableSkill && currss.skillable()) {
+						    ssStockerSkl = currss;
+						    SearchState& ss = ssStockerSkl;
 
-						int bombcnt = ss.field.explode(); ss.field.fall();
-						int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
-						if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
-						// int cntblock = ss.field.countWithountOjama();
-                        int heuristic = evaluateHeuristic(
-                            calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
-                            bombcnt,
-                            randdev()
-                        );
-						ss.heuristic = heuristic;
-						ss.skill = 0;
+						    int bombcnt = ss.field.explode(); ss.field.fall();
+						    int skillscore = BombScore[bombcnt] + ChainScore[ss.field.chain().first];
+						    if (ss.field.isOverFlow()) { okSkl = false; continue; } // オーバーフローしたら無効
+						    // int cntblock = ss.field.countWithountOjama();
+                            int heuristic = evaluateHeuristic(
+                                calcReducedHeuristic(ss.field, max(currentTurn, milestoneIdxBegin), milestoneIdxEnd, tempField, heuristicmemo),
+                                bombcnt,
+                                randdev()
+                            );
+						    ss.heuristic = heuristic;
+						    ss.skill = 0;
+						    chmax(localBest, decltype(localBest)(evaluateScore(skillscore, maxDepth - depth, ss.exploded), Command::Skill));
+                            ss.exploded += bombcnt;
+					    }
+                        {
+                            // 排他ロック
+                            mtx.lock();
 
-						chmax(localBest, decltype(localBest)(evaluateScore(skillscore, maxDepth - depth, ss.exploded), Command::Skill));
-                        ss.exploded += bombcnt;
-					}
-					{
-						// 排他ロック
-						mtx.lock();
+                            repeat(x, W - 1) {
+                                repeat(r, 4) {
+                                    // ここでコマンドを追加する(allocateの発生)
+                                    ssStocker[x][r].commands.push_back(Command(x, r));
 
-						repeat(x, W - 1) {
-							repeat(r, 4) {
-								// ここでコマンドを追加する(allocateの発生)
-								ssStocker[x][r].commands.push_back(Command(x, r));
+                                    // 最良のコマンドならば、更新する
+                                    if (localBest.first > best.first && Command(x, r) == localBest.second)
+                                        best = Tag<int, vector<Command>>(localBest.first, ssStocker[x][r].commands);
 
-								// 最良のコマンドならば、更新する
-								if (localBest.first > best.first && Command(x, r) == localBest.second)
-									best = Tag<int, vector<Command>>(localBest.first, ssStocker[x][r].commands);
+                                    // 失敗したコマンドはqueueに追加しない
+                                    if (!ok[x][r]) continue;
 
-								// 失敗したコマンドはqueueに追加しない
-								if (!ok[x][r]) continue;
-
-								// queueに追加
-								stackedStates[depth + 1].push(ssStocker[x][r]);
-							}
-						}
-						// スキルコマンドについて処理
-						if (okSkl) {
-							ssStockerSkl.commands.push_back(Command::Skill);
-							if (Command::Skill == localBest.second && localBest.first > best.first)
-								best = Tag<int, vector<Command>>(localBest.first, ssStockerSkl.commands);
-							stackedStates[depth + 1].push(ssStockerSkl);
-						}
-
+                                    // queueに追加
+                                    stackedStates[depth + 1].push(ssStocker[x][r]);
+                                }
+                            }
+                            // スキルコマンドについて処理
+                            if (okSkl) {
+                                ssStockerSkl.commands.push_back(Command::Skill);
+                                if (Command::Skill == localBest.second && localBest.first > best.first)
+                                    best = Tag<int, vector<Command>>(localBest.first, ssStockerSkl.commands);
+                                stackedStates[depth + 1].push(ssStockerSkl);
+                            }
+                        }
 					}
 				}
 				if (noAction) break;
@@ -658,11 +658,11 @@ void BattleAI::background(const atomic_bool& timekeeper) {
 	}
 
 	// 探索面数が少ない
-	if (lastMilestoneIdxBegin <= savedInput.turn) return;
+	if (lastMilestoneIdxEnd - savedInput.turn <= 4) return;
 
 	// 探索
 	auto p = solveSequence(savedInput, savedInput.me.ojama / 10, timekeeper,
-		savedInput.me.skillable(), lastMilestoneIdxBegin, lastMilestoneIdxEnd, lastMilestoneIdxEnd - savedInput.turn); // 再計算する
+		savedInput.me.skillable(), max(lastMilestoneIdxBegin, savedInput.turn + 1), lastMilestoneIdxEnd, lastMilestoneIdxEnd - savedInput.turn); // 再計算する
 	auto score = p.first;
 	auto pool = move(p.second);
 	reverse(ALL(pool));
