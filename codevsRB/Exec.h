@@ -3,7 +3,7 @@
 struct ExecOptions {
     bool shuffleFirstCommand = false;
     bool enableMultiThread = false;
-	bool checkOutputCommands = false;
+    bool checkOutputCommands = false;
 };
 extern ExecOptions execOptions;
 

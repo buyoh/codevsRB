@@ -30,11 +30,11 @@ namespace Game {
 
         // FieldクラスからPartialFieldを作る
         // make_sharedのためだけにpublic
-        inline PField(const Field& f)
+        inline PField(const Field & f)
             :instance_(make_unique<Field>(f)) { }
         // pを親としたpartialfieldを作成
         // make_sharedのためだけにpublic
-        inline PField(shared_ptr<PField>& p, vector<pair<P, int8_t>>&& c)
+        inline PField(shared_ptr<PField> & p, vector<pair<P, int8_t>> && c)
             : parent_(p), changed_(c) {
             if (p->parent_) // 親の親が存在するならば，親のインスタンスを消去
                 p->instance_.release();
@@ -49,16 +49,16 @@ namespace Game {
             return move(f);
         }
         // PartialFieldとFieldの差分であるような新たなPartialFieldを作る
-        static inline shared_ptr<PField> append(shared_ptr<PField>& parent, const Field& f) {
+        static inline shared_ptr<PField> append(shared_ptr<PField> & parent, const Field & f) {
             return make_shared<PField>(parent, parent->diff(f, parent->generate()));
         }
         // PartialFieldとFieldの差分であるような新たなPartialFieldを作る
         // ただし，selfはgであることがわかっている
-        static inline shared_ptr<PField> append_hint(shared_ptr<PField>& parent, const Field& f, const Field& g) {
+        static inline shared_ptr<PField> append_hint(shared_ptr<PField> & parent, const Field & f, const Field & g) {
             return make_shared<PField>(parent, parent->diff(f, g));
         }
 
-        static inline shared_ptr<PField> create(const Field& f) {
+        static inline shared_ptr<PField> create(const Field & f) {
             return make_shared<PField>(f);
         }
     };
@@ -70,8 +70,8 @@ namespace Game {
         CField(const Field& field) :data_() {
             repeat(x, W) {
                 uint64_t v = 0;
-                repeat(y, 16) 
-                    v |= ((uint64_t)field(y, x) & (uint64_t)15) << (uint64_t)(y*4);
+                repeat(y, 16)
+                    v |= ((uint64_t)field(y, x) & (uint64_t)15) << (uint64_t)(y * 4);
                 data_[x] = v;
             }
         }
@@ -89,7 +89,6 @@ namespace Game {
             return move(f);
         }
     };
-    
+
 
 }
-       

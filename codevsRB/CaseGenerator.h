@@ -4,7 +4,7 @@
 
 namespace Generator {
 
-    void generateFirstInput(Game::FirstInput& );
+    void generateFirstInput(Game::FirstInput&);
     void setDefaultPlayer(Game::Player&);
     void setDefaultInput(Game::Input&);
 

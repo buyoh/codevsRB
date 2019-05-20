@@ -24,7 +24,7 @@ namespace Game {
         int timeMsec;
         int ojama;
         int skill;
-		int score;
+        int score;
         Field field;
 
         template<typename istream>
